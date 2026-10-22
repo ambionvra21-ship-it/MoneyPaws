@@ -1,56 +1,36 @@
-name: Build Android APK
-
+name: Build Debug APK
 on:
   push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      - name: Set up Java JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '21'
+          distribution: temurin
+          java-version: 17
 
-      - name: Prepare Web Directory
+      - name: Install and sync
         run: |
-          mkdir -p www
-          cp index.html www/
-
-      - name: Initialize Project & Install Capacitor
-        run: |
-          npm init -y
-          npm install @capacitor/core@5 @capacitor/cli@5 @capacitor/android@5
-
-      - name: Configure Capacitor Project
-        run: |
-          npx cap init MoneyPaws com.moneypaws.app --web-dir www
-          npx cap add android
-          npx cap copy android
+          npm install
+          [ -d android ] || npx cap add android
+          npx cap sync android
 
       - name: Build Debug APK
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.parallel=false -Dorg.gradle.caching=false"
+        working-directory: android
         run: |
-          cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --no-build-cache --max-workers=1
+          ./gradlew assembleDebug
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: MoneyPaws-APK
+          name: moneypaws-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
