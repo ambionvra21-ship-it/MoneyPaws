@@ -25,6 +25,11 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Prepare Web Directory
+        run: |
+          mkdir -p www
+          cp index.html www/
+
       - name: Initialize Project & Install Capacitor
         run: |
           npm init -y
@@ -32,7 +37,7 @@ jobs:
 
       - name: Configure Capacitor Project
         run: |
-          npx cap init MoneyPaws com.moneypaws.app --web-dir .
+          npx cap init MoneyPaws com.moneypaws.app --web-dir www
           npx cap add android
           npx cap copy android
 
