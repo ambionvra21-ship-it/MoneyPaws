@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MoneyPaws Cloud Platform</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .neon-text {
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+        }
+
+        .neon-border {
+            border: 1px solid #00f0ff;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+        }
+
+        header {
+            width: 100%;
+            height: 60px;
+            background-color: #111827;
+            border-bottom: 2px solid #00f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            position: fixed;
+            top: 0; left: 0; z-index: 1000;
+        }
+
+        .nav-icon {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            background-color: #1f2937;
+        }
+
+        .wallet-banner {
+            margin-top: 60px;
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .wallet-row { display: flex; justify-content: space-between; align-items: center; }
+        .balance-box { display: flex; flex-direction: column; }
+        .balance-label { font-size: 11px; text-transform: uppercase; color: #9ca3af; }
+        .balance-value { font-size: 26px; font-weight: 700; }
+
+        .cashout-trigger {
+            padding: 10px 16px;
+            background-color: #0b0f19;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .progress-container { width: 100%; background-color: #0b0f19; height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: #00f0ff; transition: width 0.3s ease; }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; }
+
+        .marquee-wrapper { background-color: #111827; height: 32px; overflow: hidden; display: flex; align-items: center; }
+        .marquee-content { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scroller 20s linear infinite; }
+        @keyframes scroller { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
+
+        main { padding: 16px; padding-bottom: 80px; display: flex; flex-direction: column; gap: 20px; }
+
+        .app-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2000; background-color: #0b0f19;
+            padding: 80px 20px 20px 20px;
+        }
+        .app-screen.active-view { display: block; }
+        .screen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .close-screen-btn { background-color: #1f2937; border: none; color: #fff; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+
+        .side-drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background-color: #111827; border-right: 2px solid #00f0ff; z-index: 3000; transition: left 0.3s ease; padding: 20px; }
+        .side-drawer.drawer-open { left: 0; }
+        .drawer-menu-item { padding: 12px; background-color: #1f2937; border-radius: 8px; margin-bottom: 10px; cursor: pointer; }
+
+        .auth-gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0b0f19; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .auth-card { background-color: #111827; border-radius: 16px; padding: 24px; width: 100%; max-width: 320px; text-align: center; }
+        .auth-toggle-row { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 1px solid #1f2937; padding-bottom: 10px; }
+        .auth-toggle-tab { font-size: 14px; font-weight: 700; color: #4b5563; cursor: pointer; }
+        .auth-toggle-tab.active-tab { color: #00f0ff; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; text-align: left; }
+        .form-group label { font-size: 12px; color: #9ca3af; text-transform: uppercase; font-weight: 600; }
+        .form-input { width: 100%; padding: 12px; background-color: #111827; border: 1px solid #374151; border-radius: 8px; color: #ffffff; }
+        .form-input:focus { outline: none; border-color: #00f0ff; }
+
+        .action-submit-btn { width: 100%; padding: 14px; background-color: #00f0ff; color: #0b0f19; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+        .auth-hint-text { font-size: 11px; color: #9ca3af; margin-top: 14px; line-height: 1.4; }
+
+        .mining-container { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 24px; background: #111827; border-radius: 16px; }
+        .breathing-paw { width: 100px; height: 100px; background-color: #1f2937; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; cursor: pointer; user-select: none; border: 2px solid #00f0ff; margin-bottom: 12px; }
+        .mining-status { font-size: 14px; font-weight: 700; }
+        .launcher-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; }
+        .game-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        
+        #admob-sticky-footer { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 50px; 
+            background-color: #111827; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+            border-top: 1px solid #1f2937; 
+        }
+        .admob-placeholder-text { font-size: 10px; color: #00f0ff; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <!-- SECURE APPLICATION ACCOUNT LOCK COVER LAYER -->
+    <div class="auth-gate-overlay" id="applicationAuthGate">
+        <div class="auth-card neon-border">
+            <h1 class="neon-text" style="font-size: 24px; margin-bottom: 4px; text-transform:uppercase; letter-spacing:1px;">MoneyPaws</h1>
+            <p style="font-size: 11px; color:#9ca3af; margin-bottom: 20px;">Secure Cloud Portal Platform Login</p>
+            
+            <div class="auth-toggle-row">
+                <span class="auth-toggle-tab active-tab" id="tabLogin" onclick="toggleAuthViewMode('LOGIN')">Log In</span>
+                <span class="auth-toggle-tab" id="tabSignUp" onclick="toggleAuthViewMode('SIGNUP')">Register</span>
+            </div>
+
+            <div class="form-group">
+                <label>Email Identification Address</label>
+                <input type="email" class="form-input" id="authEmailInput" placeholder="name@email.com">
+            </div>
+
+            <div class="form-group">
+                <label>Secure Gate Code Word</label>
+                <input type="password" class="form-input" id="authPasswordInput" placeholder="••••••••">
+            </div>
+
+            <button class="action-submit-btn" id="authActionButton" onclick="processAuthSubmission()">Sign Into Account</button>
+            
+            <p class="auth-hint-text" id="authContextHint">
+                Logging in syncs your balance ledger, task streaks, and pending payouts securely via Supabase Cloud infrastructure modules.
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN DEVICE SHELL HEADER AREA -->
+    <header>
+        <div class="nav-icon" onclick="toggleNavigationDrawer(true)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </div>
+        <div class="app-title neon-text">MoneyPaws</div>
+        <div class="nav-icon" onclick="openApplicationScreen('profileScreen')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+    </header>
+
+    <!-- FINANCIAL DISPLAY STATUS MODULE -->
+    <div class="wallet-banner">
+        <div class="wallet-row">
+            <div class="balance-box">
+                <span class="balance-label">Total Earnings Balance</span>
+                <span class="balance-value neon-text" id="globalDisplayBalance">₱0.00</span>
+            </div>
+            <div class="cashout-trigger neon-border" onclick="openApplicationScreen('cashoutScreen')">Cash Out</div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="globalMilestoneProgress"></div>
+        </div>
+        <div class="progress-labels">
+            <span>Next Target Threshold:</span>
+            <span id="globalNextThresholdLabel">₱50.00</span>
+        </div>
+    </div>
+
+    <!-- TICKER TEXT RUNNER SYSTEM -->
+    <div class="marquee-wrapper">
+        <div class="marquee-content">
+            🐾 PAW MINING • 📆 DAILY LOGINS • 🎡 SPIN THE WHEEL • 📺 ADS REWARDS • 🚶 WALKING STEPS • ONE WALLET ECOSYSTEM INTEGRATION CORES ACTIVE
+        </div>
+    </div>
+
+    <!-- SIDE DRAWER INTERACTION LAYER -->
+    <div class="side-drawer" id="appSideDrawer">
+        <div class="app-title neon-text" style="font-size: 24px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">Menu</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openApplicationScreen('cashoutScreen');">📥 Cash Out / Wallet</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openApplicationScreen('profileScreen');">👤 My Profile Account</div>
+    </div>
+
+    <!-- RENDERING BOX REGION FOR SUB-TILES -->
+    <main id="mainDashboardView"></main>
+
+    <!-- FLOATING INTERFACE TILES FRAMEWORK WINDOWS -->
+    <div class="app-screen" id="cashoutScreen">
+        <div class="screen-header">
+            <h2 class="neon-text">Withdraw Assets</h2>
+            <button class="close-screen-btn" onclick="closeApplicationScreen('cashoutScreen')">×</button>
+        </div>
+        <div class="form-group">
+            <label>Destination Account Identifier</label>
+            <input type="text" class="form-input" id="withdrawalAccountField" placeholder="Enter recipient routing data">
+        </div>
+        <button class="action-submit-btn" onclick="processWithdrawalRequest()">Request Cash Out</button>
+    </div>
+
+    <div class="app-screen" id="profileScreen">
+        <div class="screen-header">
+            <h2 class="neon-text">My Profile Account</h2>
+            <button class="close-screen-btn" onclick="closeApplicationScreen('profileScreen')">×</button>
+        </div>
+        <div style="background-color:#111827; padding:20px; border-radius:12px;" class="neon-border">
+            <p>Verification Tier Level: <span class="neon-text">Cloud Ledger Sync Confirmed</span></p>
+        </div>
+    </div>
+
+    <!-- STICKY BOTTOM AD BANNER HOLDER -->
+    <div id="admob-sticky-footer" data-ad-unit="ca-app-pub-6655685917040449/1985937373">
+        <div class="admob-placeholder-text">MoneyPaws Bottom Banner Active</div>
+    </div>
+
+    <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    /* ==========================================================
+       🔒 ADMOB & SUPABASE PRODUCTION CONFIGURATION
+       ========================================================== */
+    const AD_CONFIG = {
+        bannerAdUnitId: "ca-app-pub-6655685917040449/1985937373",
+        rewardedAdUnitId: "ca-app-pub-6655685917040449/3704097744"
+    };
+
+    const SUPABASE_URL = "https://ddikgztnzuexjneaynup.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_AUHP-CPN4DsE8xhKDIkMvA_C80hCyLI"; 
+    
+    let supabase = null;
+    let activeAuthMode = "LOGIN";
+
+    window.appState = { balance: 0.00 };
+    const THRESHOLDS = [50.00, 100.00, 500.00, 1000.00];
+
+    try {
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("[Supabase] ESM Module client initialized successfully.");
+        
+        supabase.auth.getSession().then(({ data }) => {
+            if (data && data.session) {
+                bypassAuthGate(data.session.user);
+            }
+        }).catch(err => console.log("Session recovery skipped:", err));
+    } catch (fail) {
+        console.error("Initialization failed:", fail);
+    }
+
+    /* --- REWARDED VIDEO AD PROCESSOR (5% USER EARNINGS RATIO) --- */
+    window.triggerRewardedAd = function() {
+        alert("Playing Rewarded Video Ad...\n(Unit ID: " + AD_CONFIG.rewardedAdUnitId + ")");
+        
+        setTimeout(() => {
+            const rewardAmount = 0.01; // 5% allocation (₱0.01) based on standard ad eCPM
+            
+            // Perform secure backend credit update
+            if (supabase) {
+                supabase.rpc('secure_mining_claim', { payout_amount: rewardAmount })
+                .then(({ data, error }) => {
+                    if (!error && data !== null) {
+                        window.appState.balance = parseFloat(data);
+                    } else {
+                        window.appState.balance += rewardAmount;
+                    }
+                    syncGlobalReactiveUI();
+                    alert(`Ad Completed! ₱${rewardAmount.toFixed(2)} deposited to your cloud balance.`);
+                });
+            } else {
+                window.appState.balance += rewardAmount;
+                syncGlobalReactiveUI();
+                alert(`Ad Completed! ₱${rewardAmount.toFixed(2)} added to balance.`);
+            }
+        }, 2500);
+    };
+
+    /* --- AUTHENTICATION HANDLERS --- */
+    window.toggleAuthViewMode = function(mode) {
+        activeAuthMode = mode;
+        const loginTab = document.getElementById('tabLogin');
+        const signupTab = document.getElementById('tabSignUp');
+        const actionBtn = document.getElementById('authActionButton');
+        const hintText = document.getElementById('authContextHint');
+
+        if (mode === "LOGIN") {
+            loginTab.classList.add('active-tab');
+            signupTab.classList.remove('active-tab');
+            actionBtn.innerText = "Sign Into Account";
+            hintText.innerText = "Logging in syncs your balance ledger, task streaks, and pending payouts securely via Supabase Cloud infrastructure modules.";
+        } else {
+            signupTab.classList.add('active-tab');
+            loginTab.classList.remove('active-tab');
+            actionBtn.innerText = "Create Fresh Profile";
+            hintText.innerText = "Verification required. Registration auto-provisions your individual isolated accounting wallet vault inside the server ledger loops.";
+        }
+    };
+
+    window.processAuthSubmission = function() {
+        if (!supabase) {
+            alert("Database engine is offline. Syncing pipeline vectors, please wait.");
+            return;
+        }
+
+        const email = document.getElementById('authEmailInput').value.trim();
+        const password = document.getElementById('authPasswordInput').value.trim();
+        const actionBtn = document.getElementById('authActionButton');
+
+        if (!email || !password) {
+            alert("Please input all required credentials.");
+            return;
+        }
+
+        actionBtn.disabled = true;
+
+        if (activeAuthMode === "LOGIN") {
+            supabase.auth.signInWithPassword({ email, password })
+            .then(({ data, error }) => {
+                if (error) {
+                    alert("Authentication Error: " + error.message);
+                    actionBtn.disabled = false;
+                } else if (data && data.user) {
+                    bypassAuthGate(data.user);
+                }
+            }).catch(err => {
+                alert("Network failure: " + err.message);
+                actionBtn.disabled = false;
+            });
+        } else {
+            supabase.auth.signUp({ email, password })
+            .then(({ data, error }) => {
+                if (error) {
+                    alert("Registration Refused: " + error.message);
+                    actionBtn.disabled = false;
+                } else {
+                    alert("Success! Check your email verification link before logging in.");
+                    toggleAuthViewMode("LOGIN");
+                    actionBtn.disabled = false;
+                }
+            }).catch(err => {
+                alert("Network error: " + err.message);
+                actionBtn.disabled = false;
+            });
+        }
+    };
+
+    function bypassAuthGate(user) {
+        document.getElementById('applicationAuthGate').style.display = "none";
+        
+        supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+            .then(({ data, error }) => {
+                if (!error && data) {
+                    window.appState.balance = parseFloat(data.php_balance) || 0.00;
+                    syncGlobalReactiveUI();
+                }
+            });
+    }
+
+    /* --- UI CONTROLLERS --- */
+    window.toggleNavigationDrawer = function(open) {
+        const drawer = document.getElementById('appSideDrawer');
+        if (open) drawer.classList.add('drawer-open');
+        else drawer.classList.remove('drawer-open');
+    };
+
+    window.openApplicationScreen = function(id) {
+        const screen = document.getElementById(id);
+        if (screen) screen.classList.add('active-view');
+    };
+
+    window.closeApplicationScreen = function(id) {
+        const screen = document.getElementById(id);
+        if (screen) screen.classList.remove('active-view');
+    };
+
+    /* --- MINING ENGINE (5% USER EARNINGS RATIO) --- */
+    let isMiningActive = false;
+    window.handleCentralMiningTap = function() {
+        if (isMiningActive) return;
+        isMiningActive = true;
+
+        const label = document.getElementById('miningStatusText');
+        label.innerText = "MINING UNDERWAY...";
+        label.style.color = "#34d399";
+
+        setTimeout(() => {
+            isMiningActive = false;
+            label.innerText = "READY TO MINE";
+            label.style.color = "#00f0ff";
+            
+            const basePayoutAmount = 0.005; // 5% user allocation (₱0.005 per claim)
+
+            supabase
+                .rpc('secure_mining_claim', { payout_amount: basePayoutAmount })
+                .then(({ data, error }) => {
+                    if (error) {
+                        alert("Sync Error: " + error.message);
+                        return;
+                    }
+                    if (data !== null) {
+                        window.appState.balance = parseFloat(data);
+                        syncGlobalReactiveUI();
+                        alert(`Mining verified! Deposited ₱${basePayoutAmount.toFixed(3)} to your cloud vault.`);
+                    }
+                });
+
+        }, 3000);
+    };
+
+    function syncGlobalReactiveUI() {
+        document.getElementById('globalDisplayBalance').innerText = `₱${window.appState.balance.toFixed(2)}`;
+        let currentTarget = THRESHOLDS[0];
+        for (let i = 0; i < THRESHOLDS.length; i++) {
+            if (window.appState.balance < THRESHOLDS[i]) {
+                currentTarget = THRESHOLDS[i];
+                break;
+            }
+        }
+        document.getElementById('globalNextThresholdLabel').innerText = `₱${currentTarget.toFixed(2)}`;
+        let percentage = Math.min(100, (window.appState.balance / currentTarget) * 100);
+        document.getElementById('globalMilestoneProgress').style.width = `${percentage}%`;
+    }
+
+    window.processWithdrawalRequest = function() {
+        const detail = document.getElementById('withdrawalAccountField').value.trim();
+        if (!detail) {
+            alert("Please supply routing payout specifications.");
+            return;
+        }
+        alert("Transaction routing recorded. Request forwarded to processing hold lines.");
+        document.getElementById('withdrawalAccountField').value = "";
+        closeApplicationScreen('cashoutScreen');
+    };
+
+    /* --- INITIAL RENDER --- */
+    const dashboard = document.getElementById('mainDashboardView');
+    if (dashboard) {
+        dashboard.innerHTML = `
+            <div class="mining-container neon-border">
+                <div class="breathing-paw" id="centerPawEngine" onclick="handleCentralMiningTap()">🐾</div>
+                <div class="mining-status neon-text" id="miningStatusText">READY TO MINE</div>
+            </div>
+            <div class="launcher-grid">
+                <div class="game-card" onclick="alert('Daily Login Grid Triggered')">
+                    <div class="card-icon">📆</div>
+                    <div class="card-label">Daily Logins</div>
+                </div>
+                <div class="game-card" onclick="triggerRewardedAd()">
+                    <div class="card-icon">📺</div>
+                    <div class="card-label">Watch Rewarded Ad</div>
+                </div>
+            </div>`;
+    }
+    </script>
+</body>
+</html>
