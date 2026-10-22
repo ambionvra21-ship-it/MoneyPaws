@@ -3,6 +3,10 @@ on:
   push:
   workflow_dispatch:
 
+env:
+  # Google's TEST app ID. Replace with YOUR AdMob App ID (it contains a "~"), e.g. ca-app-pub-6655685917040449~xxxxxxxxxx
+    ADMOB_APP_ID: ca-app-pub-6655685917040449~5170056805
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,11 +15,9 @@ jobs:
         working-directory: moneypaws-apk-project/proj
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -26,6 +28,11 @@ jobs:
           npm install
           [ -d android ] || npx cap add android
           npx cap sync android
+
+      - name: Add AdMob App ID to manifest
+        run: |
+          F=android/app/src/main/AndroidManifest.xml
+          grep -q 'ads.APPLICATION_ID' $F || sed -i "s#</application>#<meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\"/></application>#" $F
 
       - name: Build Debug APK
         working-directory: moneypaws-apk-project/proj/android
