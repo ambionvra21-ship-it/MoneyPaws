@@ -18,6 +18,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Prepare www folder
+        run: |
+          mkdir -p www
+          cp index.html www/
+          cp -r assets www/
+
       - name: Install and sync
         run: |
           npm install
