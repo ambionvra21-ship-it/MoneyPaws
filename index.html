@@ -85,7 +85,6 @@
         .marquee-content { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scroller 20s linear infinite; }
         @keyframes scroller { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
 
-        /* Bottom padding keeps elements above the fixed ad banner */
         main { padding: 16px; padding-bottom: 80px; display: flex; flex-direction: column; gap: 20px; }
 
         .app-screen {
@@ -277,12 +276,12 @@
         console.error("Initialization failed:", fail);
     }
 
-    /* --- REWARDED VIDEO AD PROCESSOR --- */
+    /* --- REWARDED VIDEO AD PROCESSOR (5% USER EARNINGS RATIO) --- */
     window.triggerRewardedAd = function() {
         alert("Playing Rewarded Video Ad...\n(Unit ID: " + AD_CONFIG.rewardedAdUnitId + ")");
         
         setTimeout(() => {
-            const rewardAmount = 0.25;
+            const rewardAmount = 0.01; // 5% allocation (₱0.01) based on standard ad eCPM
             
             // Perform secure backend credit update
             if (supabase) {
@@ -294,7 +293,7 @@
                         window.appState.balance += rewardAmount;
                     }
                     syncGlobalReactiveUI();
-                    alert(`Ad Completed! ₱${rewardAmount.toFixed(2)} deposited directly to your cloud balance.`);
+                    alert(`Ad Completed! ₱${rewardAmount.toFixed(2)} deposited to your cloud balance.`);
                 });
             } else {
                 window.appState.balance += rewardAmount;
@@ -406,7 +405,7 @@
         if (screen) screen.classList.remove('active-view');
     };
 
-    /* --- MINING ENGINE --- */
+    /* --- MINING ENGINE (5% USER EARNINGS RATIO) --- */
     let isMiningActive = false;
     window.handleCentralMiningTap = function() {
         if (isMiningActive) return;
@@ -421,7 +420,7 @@
             label.innerText = "READY TO MINE";
             label.style.color = "#00f0ff";
             
-            const basePayoutAmount = 0.05; 
+            const basePayoutAmount = 0.005; // 5% user allocation (₱0.005 per claim)
 
             supabase
                 .rpc('secure_mining_claim', { payout_amount: basePayoutAmount })
@@ -433,7 +432,7 @@
                     if (data !== null) {
                         window.appState.balance = parseFloat(data);
                         syncGlobalReactiveUI();
-                        alert(`Mining verified! Deposited ₱${basePayoutAmount.toFixed(2)} to your cloud vault.`);
+                        alert(`Mining verified! Deposited ₱${basePayoutAmount.toFixed(3)} to your cloud vault.`);
                     }
                 });
 
