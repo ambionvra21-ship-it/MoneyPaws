@@ -272,6 +272,7 @@
 
     <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    window.addEventListener('error', e => alert('App error: ' + e.message));
 
     /* ==========================================================
        🔒 ADMOB & SUPABASE PRODUCTION CONFIGURATION
@@ -491,6 +492,26 @@
         closeApplicationScreen('cashoutScreen');
     };
 
+    /* --- INITIAL RENDER --- */
+    const dashboard = document.getElementById('mainDashboardView');
+    if (dashboard) {
+        dashboard.innerHTML = `
+            <div class="mining-container neon-border">
+                <div class="breathing-paw" id="centerPawEngine" onclick="handleCentralMiningTap()">🐾</div>
+                <div class="mining-status neon-text" id="miningStatusText">READY TO MINE</div>
+            </div>
+            <div class="launcher-grid">
+                <div class="game-card" onclick="openDaily()">
+                    <div class="card-icon">📆</div>
+                    <div class="card-label">Daily Logins</div>
+                </div>
+                <div class="game-card" onclick="triggerRewardedAd()">
+                    <div class="card-icon">📺</div>
+                    <div class="card-label">Watch Rewarded Ad</div></div><div class="game-card" onclick="openSpin()"><div class="card-icon">🎡</div><div class="card-label">Spin the Wheel</div></div><div class="game-card" onclick="openSteps()"><div class="card-icon">🚶</div><div class="card-label">Walking Steps</div>
+                </div>
+            </div>`;
+    }
+    
     /* --- v2: SERVER-VALIDATED FEATURES, REAL ADS, WITHDRAWALS --- */
     const $ = id => document.getElementById(id);
     const phToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
@@ -506,7 +527,7 @@
     /* ADS (AdMob via Capacitor). Set ADMOB_TESTING=false only for your final release build. */
     const ADMOB_TESTING = true;
     const NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
-    const AdMob = NATIVE ? Capacitor.registerPlugin('AdMob') : null;
+    let AdMob = null; try { if (NATIVE) AdMob = Capacitor.registerPlugin('AdMob'); } catch (e) { console.log(e); }
     async function initAds() {
         if (!NATIVE) return;
         try {
@@ -555,7 +576,7 @@
     /* SPIN THE WHEEL */
     const SPIN = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05];
     let wheelRot = 0, spinning = false;
-    $('wheel').innerHTML = SPIN.map((v, i) => `<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(${(i + .5) * 60}deg) translateY(-85px);font-size:11px;font-weight:bold">₱${v}</span>`).join('');
+    try { $('wheel').innerHTML = SPIN.map((v, i) => `<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(${(i + .5) * 60}deg) translateY(-85px);font-size:11px;font-weight:bold">₱${v}</span>`).join(''); } catch (e) { console.log(e); }
     window.openSpin = () => openApplicationScreen('spinScreen');
     window.doSpin = async function () {
         if (spinning) return; spinning = true;
@@ -602,25 +623,6 @@
     };
     initAds();
 
-    /* --- INITIAL RENDER --- */
-    const dashboard = document.getElementById('mainDashboardView');
-    if (dashboard) {
-        dashboard.innerHTML = `
-            <div class="mining-container neon-border">
-                <div class="breathing-paw" id="centerPawEngine" onclick="handleCentralMiningTap()">🐾</div>
-                <div class="mining-status neon-text" id="miningStatusText">READY TO MINE</div>
-            </div>
-            <div class="launcher-grid">
-                <div class="game-card" onclick="openDaily()">
-                    <div class="card-icon">📆</div>
-                    <div class="card-label">Daily Logins</div>
-                </div>
-                <div class="game-card" onclick="triggerRewardedAd()">
-                    <div class="card-icon">📺</div>
-                    <div class="card-label">Watch Rewarded Ad</div></div><div class="game-card" onclick="openSpin()"><div class="card-icon">🎡</div><div class="card-label">Spin the Wheel</div></div><div class="game-card" onclick="openSteps()"><div class="card-icon">🚶</div><div class="card-label">Walking Steps</div>
-                </div>
-            </div>`;
-    }
     </script>
 </body>
 </html>
