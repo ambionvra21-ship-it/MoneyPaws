@@ -255,7 +255,7 @@
             <button class="close-screen-btn" onclick="closeApplicationScreen('profileScreen')">×</button>
         </div>
         <div style="background-color:#111827; padding:20px; border-radius:12px;" class="neon-border">
-            <p>Verification Tier Level: <span class="neon-text">Cloud Ledger Sync Confirmed</span></p>
+            <div id="profileBody">Loading...</div>
         </div>
     </div>
 
@@ -599,7 +599,7 @@
     window.claimDaily = async function () {
         try {
             const d = await rpc('claim_daily_login');
-            applyBal(d); alert('Day ' + d.streak + ' streak! ' + money(d.reward) + ' added.');
+            applyBal(d); alert('Day ' + d.streak + ' streak! ' + money(d.reward) + ' added.'); maybeInterstitial();
             renderDaily(await myProfile());
         } catch (e) { alert(e.message); }
     };
@@ -615,7 +615,7 @@
             const d = await rpc('spin_wheel');
             wheelRot = Math.ceil(wheelRot / 360) * 360 + 1800 + 360 - (d.idx - 0.5) * 60;
             $('wheel').style.transform = `rotate(${wheelRot}deg)`;
-            setTimeout(() => { applyBal(d); alert('You won ' + money(d.reward) + '!'); spinning = false; }, 4300);
+            setTimeout(() => { applyBal(d); alert('You won ' + money(d.reward) + '!'); maybeInterstitial(); spinning = false; }, 4300);
         } catch (e) { alert(e.message); spinning = false; }
     };
 
@@ -665,7 +665,7 @@
     window.refreshMining = async () => { try { const pr = await myProfile(); nextMineAt = pr.last_mine ? new Date(pr.last_mine).getTime() + MINE_MS : 0; } catch (e) {} };
     try { supabase.auth.onAuthStateChange((ev, sess) => { if (sess) refreshMining(); }); } catch (e) {}
     window.handleCentralMiningTap = async function () {
-        if (nextMineAt > Date.now()) { alert('Next mining in ' + hms(nextMineAt - Date.now())); return; }
+        if (nextMineAt > Date.now()) { if (!(await askRefill('mine'))) return; nextMineAt = 0; }
         try {
             const bal = await rpc('secure_mining_claim', { payout_amount: 0.02 });
             window.appState.balance = parseFloat(bal); syncGlobalReactiveUI();
@@ -693,14 +693,14 @@
         if (!card || revealed) return;
         const d = cv.getContext('2d').getImageData(0, 0, 300, 140).data; let c = 0;
         for (let i = 3; i < d.length; i += 16) if (d[i] === 0) c++;
-        if (c / (d.length / 16) > 0.45) { revealed = true; cv.getContext('2d').clearRect(0, 0, 300, 140); applyBal(card); if (card.win) { coinRain(); alert('You won ' + money(card.reward) + '!'); } }
+        if (c / (d.length / 16) > 0.45) { revealed = true; cv.getContext('2d').clearRect(0, 0, 300, 140); applyBal(card); maybeInterstitial(); if (card.win) { coinRain(); alert('You won ' + money(card.reward) + '!'); } }
     };
     cv.addEventListener('touchmove', scr, { passive: false }); cv.addEventListener('mousemove', e => { if (e.buttons) scr(e); });
     cv.addEventListener('touchend', doneScr); cv.addEventListener('mouseup', doneScr);
     window.openScratch = () => { openApplicationScreen('scratchScreen'); cover(); };
     window.getCard = async function () {
         if (card && !revealed) { alert('Finish scratching your current card first.'); return; }
-        try { card = await rpc('scratch_card'); } catch (e) { alert(e.message); return; }
+        try { card = await rpc('scratch_card'); } catch (e) { if (/No more/.test(e.message) && await askRefill('scratch')) return getCard(); alert(e.message); return; }
         const row = card.win ? ['🐾', '🐾', '🐾'] : ['🐾', '🐱', '🐶'].sort(() => Math.random() - .5);
         $('scratchPrize').innerHTML = `<div>${row.join(' ')}</div><div class="neon-text" style="font-size:18px">${card.win ? 'YOU WIN ' + money(card.reward) : 'Try again!'}</div>`;
         revealed = false; cover();
@@ -709,8 +709,8 @@
     /* FRUIT TAP */
     const FRUITS = ['🍎', '🍉', '🍌', '🍇', '🍓', '🍍', '🍊']; let fScore = 0, fRun = false;
     window.openFruit = () => openApplicationScreen('fruitScreen');
-    window.startFruit = function () {
-        if (fRun) return; fRun = true; fScore = 0; let t = 20;
+    window.startFruit = async function () {
+        if (fRun) return; fRun = true; try { const pl = await rpc('plays_left'); if (pl.fruit <= 0 && !(await askRefill('fruit'))) { fRun = false; return; } } catch (e) {} fScore = 0; let t = 20;
         const area = $('fruitArea'), btn = $('fruitBtn'); area.innerHTML = ''; btn.disabled = true; $('fruitScore').innerText = 'Score: 0';
         const spawn = setInterval(() => {
             const f = document.createElement('span'); f.className = 'fruit'; f.textContent = FRUITS[Math.floor(Math.random() * FRUITS.length)]; f.style.left = Math.random() * 85 + '%';
@@ -722,9 +722,74 @@
             t--; btn.innerText = 'Time: ' + t + 's';
             if (t <= 0) {
                 clearInterval(clock); clearInterval(spawn); fRun = false; btn.disabled = false; btn.innerText = 'Play Fruit Tap';
-                try { const d = await rpc('claim_fruit', { p_score: fScore }); applyBal(d); alert('Score ' + fScore + '! You earned ' + money(d.reward)); } catch (e) { alert(e.message); }
+                try { const d = await rpc('claim_fruit', { p_score: fScore }); applyBal(d); alert('Score ' + fScore + '! You earned ' + money(d.reward)); maybeInterstitial(); } catch (e) { alert(e.message); }
             }
         }, 1000);
+    };
+/* WATCH-AN-AD REFILLS + PROFILE */
+    const APP_DOWNLOAD_URL = 'PASTE_YOUR_DOWNLOAD_LINK_HERE';
+    async function watchAdOnly() {
+        if (!NATIVE || !AdMob) { alert('Ads only play inside the installed app.'); return false; }
+        let rewarded = false, h = null;
+        try {
+            h = await AdMob.addListener('onRewardedVideoAdReward', () => { rewarded = true; });
+            await AdMob.prepareRewardVideoAd({ adId: AD_CONFIG.rewardedAdUnitId, isTesting: ADMOB_TESTING });
+            await AdMob.showRewardVideoAd();
+            await new Promise(r => setTimeout(r, 800));
+        } catch (e) { alert('Ad problem: ' + ((e && e.message) || 'ad not ready, try again in a minute')); }
+        try { if (h) h.remove(); } catch (e) {}
+        if (!rewarded) alert('Watch the full ad to unlock this.');
+        return rewarded;
+    }
+    async function askRefill(game) {
+        const what = { mine: 'mine again right now', scratch: 'get 1 more scratch card', fruit: 'get 1 more Fruit Tap game' }[game];
+        if (!confirm('Watch a short ad to ' + what + '?')) return false;
+        if (!(await watchAdOnly())) return false;
+        try { await rpc('refill_play', { p_game: game }); return true; } catch (e) { alert(e.message); return false; }
+    }
+    const _openScreen = window.openApplicationScreen;
+    window.openApplicationScreen = id => { _openScreen(id); if (id === 'profileScreen') loadProfile().then(loadRef); };
+    async function loadProfile() {
+        const box = $('profileBody');
+        try {
+            const { data: { user } } = await supabase.auth.getUser(); const pr = await myProfile();
+            const { data: w } = await supabase.from('withdrawals').select('amount,status,created_at').order('created_at', { ascending: false }).limit(5);
+            box.innerHTML = `<p style="font-size:12px;color:#9ca3af">Signed in as</p><p style="margin-bottom:10px">${user.email}</p>
+            <p>Balance: <span class="neon-text">₱${(+pr.php_balance || 0).toFixed(2)}</span></p>
+            <p>Login streak: <span class="neon-text">${pr.login_streak || 0} day(s)</span></p>
+            <p style="margin:12px 0 4px;font-size:12px;color:#9ca3af">Recent withdrawals</p>
+            ${(w && w.length) ? w.map(x => `<p style="font-size:12px">${new Date(x.created_at).toLocaleDateString()} · ₱${x.amount} · ${x.status}</p>`).join('') : '<p style="font-size:12px">None yet</p>'}
+            <div id="refBox" style="margin-top:12px;font-size:13px"></div><button class="action-submit-btn" style="margin-top:14px" onclick="shareApp()">Invite friends</button>
+            <button class="action-submit-btn" style="margin-top:8px;background:#1f2937" onclick="logOut()">Log out</button><button class="action-submit-btn" style="margin-top:8px;background:#7f1d1d" onclick="deleteAccount()">Delete my account</button>`;
+        } catch (e) { box.innerText = 'Could not load profile: ' + e.message; }
+    }
+    window.shareApp = async () => {
+        const t = 'Join me on MoneyPaws and earn rewards! Download: ' + APP_DOWNLOAD_URL + (refCode ? ' - use my code ' + refCode + ' for a bonus' : '');
+        try { if (navigator.share) await navigator.share({ text: t }); else { await navigator.clipboard.writeText(t); alert('Invite text copied'); } } catch (e) {}
+    };
+    window.logOut = async () => { try { await supabase.auth.signOut(); } catch (e) {} location.reload(); };
+/* MORE ADS (interstitial every 2nd reward) + REFERRALS + ACCOUNT DELETE */
+    const INTERSTITIAL_ID = 'PASTE_YOUR_INTERSTITIAL_AD_UNIT_ID';
+    let actionCount = 0, refCode = '';
+    async function maybeInterstitial() {
+        actionCount++; if (!NATIVE || !AdMob || actionCount % 2) return;
+        const id = INTERSTITIAL_ID.startsWith('PASTE') ? (ADMOB_TESTING ? 'ca-app-pub-3940256099942544/1033173712' : null) : INTERSTITIAL_ID;
+        if (!id) return;
+        try { await AdMob.prepareInterstitial({ adId: id, isTesting: ADMOB_TESTING }); await AdMob.showInterstitial(); } catch (e) { console.log('Interstitial', e); }
+    }
+    async function loadRef() {
+        const b = $('refBox'); if (!b) return;
+        try {
+            const r = await rpc('my_referral'); refCode = r.code;
+            b.innerHTML = `Your referral code: <b class="neon-text">${r.code}</b> (${r.count} friends joined, you both get ₱0.05)` + (r.applied ? '' : `<div style="margin-top:8px"><input id="refInput" class="form-input" placeholder="Friend's code"><button class="action-submit-btn" style="margin-top:6px" onclick="applyRef()">Apply code (+₱0.05)</button></div>`);
+        } catch (e) {}
+    }
+    window.applyRef = async () => {
+        try { const d = await rpc('apply_referral', { p_code: $('refInput').value }); applyBal(d); alert('Code applied! +' + money(d.reward)); loadProfile().then(loadRef); } catch (e) { alert(e.message); }
+    };
+    window.deleteAccount = async () => {
+        if (!confirm('Permanently delete your account and balance? This cannot be undone.')) return;
+        try { await rpc('delete_my_account'); try { await supabase.auth.signOut(); } catch (e) {} alert('Your account was deleted.'); location.reload(); } catch (e) { alert(e.message); }
     };
     initAds();
 
