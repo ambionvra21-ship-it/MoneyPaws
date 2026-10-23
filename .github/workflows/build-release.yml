@@ -20,6 +20,18 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Make sure www/index.html exists
+        run: |
+          mkdir -p www
+          F=$(grep -rl "MoneyPaws v1.0" "$GITHUB_WORKSPACE" --include='*.html' --exclude-dir=node_modules --exclude-dir=android --exclude-dir=.git --exclude-dir=docs | head -1 || true)
+          if [ -n "$F" ] && [ "$F" != "$PWD/www/index.html" ]; then echo "Using: $F"; cp "$F" www/index.html; fi
+          if [ ! -f www/index.html ]; then
+            F=$(find "$GITHUB_WORKSPACE" -name 'index*.html' -not -path '*/node_modules/*' -not -path '*/android/*' -not -path '*/.git/*' -not -path '*/docs/*' | head -1)
+            [ -n "$F" ] && { echo "Using: $F"; cp "$F" www/index.html; }
+          fi
+          test -f www/index.html || { echo "No index.html found anywhere in the repo"; exit 1; }
+          ls -R www | head -30
+
       - name: Turn off AdMob test mode
         run: sed -i 's/const ADMOB_TESTING = true/const ADMOB_TESTING = false/' www/index.html
 
