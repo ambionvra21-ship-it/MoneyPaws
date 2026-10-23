@@ -211,7 +211,7 @@
         </div>
         <div class="progress-labels">
             <span>Next Target Threshold:</span>
-            <span id="globalNextThresholdLabel">₱50.00</span>
+            <span id="globalNextThresholdLabel">₱5 · 500 🐾</span>
         </div>
     </div>
 
@@ -328,7 +328,7 @@
     let activeAuthMode = "LOGIN";
 
     window.appState = { balance: 0.00 };
-    const THRESHOLDS = [50.00, 100.00, 500.00, 1000.00];
+    const THRESHOLDS = [5, 10, 15, 20, 50, 100, 500, 1000];
 
     try {
         supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -509,15 +509,15 @@
 
     function syncGlobalReactiveUI() {
         document.getElementById('globalDisplayBalance').innerText = `₱${window.appState.balance.toFixed(2)}`;
-        let currentTarget = THRESHOLDS[0];
+        let currentTarget = THRESHOLDS[THRESHOLDS.length - 1];
         for (let i = 0; i < THRESHOLDS.length; i++) {
             if (window.appState.balance < THRESHOLDS[i]) {
                 currentTarget = THRESHOLDS[i];
                 break;
             }
         }
-        document.getElementById('globalNextThresholdLabel').innerText = `₱${currentTarget.toFixed(2)}`;
-        let percentage = Math.min(100, (window.appState.balance / currentTarget) * 100);
+        document.getElementById('globalNextThresholdLabel').innerText = `₱${currentTarget} · ${(currentTarget * 100).toLocaleString()} 🐾`;
+        const prevT = THRESHOLDS[THRESHOLDS.indexOf(currentTarget) - 1] || 0; let percentage = Math.min(100, Math.max(0, (window.appState.balance - prevT) / (currentTarget - prevT) * 100));
         document.getElementById('globalMilestoneProgress').style.width = `${percentage}%`;
     }
 
@@ -567,12 +567,12 @@
     /* ADS (AdMob via Capacitor). Set ADMOB_TESTING=false only for your final release build. */
     const ADMOB_TESTING = true;
     const NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
-    let AdMob = null; try { if (NATIVE) AdMob = Capacitor.registerPlugin('AdMob'); } catch (e) { console.log(e); }
+    let AdMob = null; try { if (NATIVE) AdMob = (Capacitor.Plugins && Capacitor.Plugins.AdMob) || Capacitor.registerPlugin('AdMob'); } catch (e) { console.log(e); }
     let adStatus = 'Ads: starting...';
     const em = e => (e && (e.message || e.code)) || JSON.stringify(e);
-    const setAd = m => { adStatus = m; console.log(m); try { const x = $('adStatusLine'); if (x) x.innerText = m; } catch (e) {} };
+    const setAd = m => { adStatus = m; console.log(m); try { const x = $('adStatusLine'); if (x) x.innerText = m; const c = $('adChip'); if (c) { c.innerText = m; c.style.display = ADMOB_TESTING ? 'block' : 'none'; } } catch (e) {} };
     async function initAds() {
-        if (!NATIVE || !AdMob) { setAd('Ads: only work in the installed app'); return; }
+        setAd('Ads: starting (native=' + NATIVE + ', plugin=' + (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable ? Capacitor.isPluginAvailable('AdMob') : '?') + ')'); if (!NATIVE || !AdMob) { setAd('Ads: not running as installed app (native=' + NATIVE + ')'); return; }
         const opts = { adId: AD_CONFIG.bannerAdUnitId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: ADMOB_TESTING };
         try {
             $('admob-sticky-footer').style.display = 'none';
@@ -583,7 +583,7 @@
             await AdMob.initialize({ initializeForTesting: ADMOB_TESTING });
             document.body.style.paddingBottom = '64px';
             await AdMob.showBanner(opts); setAd('Banner requested...'); preloadRewarded(); preloadInter(interstitialId());
-        } catch (e) { setAd('Ads init error: ' + em(e)); if (ADMOB_TESTING) alert(adStatus); }
+        } catch (e) { setAd('Ads init error: ' + em(e)); if (ADMOB_TESTING && !window._adTry) alert(adStatus); window._adTry = (window._adTry || 0) + 1; if (window._adTry < 4) setTimeout(initAds, 15000); }
     }
     let adBusy = false;
     window.triggerRewardedAd = async function () {
@@ -865,6 +865,8 @@
     async function preloadRewarded() { try { await AdMob.prepareRewardVideoAd({ adId: AD_CONFIG.rewardedAdUnitId, isTesting: ADMOB_TESTING }); rewardReady = true; } catch (e) { rewardReady = false; setAd('Rewarded preload: ' + em(e)); } }
     async function preloadInter(id) { if (!id) return; try { await AdMob.prepareInterstitial({ adId: id, isTesting: ADMOB_TESTING }); interReady = true; } catch (e) { interReady = false; setAd('Interstitial preload: ' + em(e)); } }
     window.openLegal = () => openApplicationScreen('legalScreen');
+try { document.querySelector('.marquee-wrapper').insertAdjacentHTML('afterend', '<div id="adChip" onclick="retryAds()" style="font-size:10px;color:#9ca3af;text-align:center;padding:2px 0;display:none">Ads: starting</div>'); } catch (e) {}
+    window.retryAds = () => initAds();
     initAds();
 
     </script>
