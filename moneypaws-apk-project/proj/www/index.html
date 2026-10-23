@@ -142,6 +142,16 @@
         .wheel-wrap{position:relative;width:230px;height:230px;margin:28px auto}
         .wheel{position:relative;width:100%;height:100%;border-radius:50%;border:3px solid #00f0ff;background:conic-gradient(#0e7490 0 60deg,#1e293b 0 120deg,#0e7490 0 180deg,#1e293b 0 240deg,#0e7490 0 300deg,#1e293b 0 360deg);transition:transform 4s cubic-bezier(.17,.67,.12,1)}
         .wheel-pointer{position:absolute;top:-20px;left:50%;transform:translateX(-50%);color:#00f0ff;z-index:2;font-size:22px}
+    @keyframes pawBreath{0%,100%{transform:scale(1);box-shadow:0 0 14px #00f0ff55}50%{transform:scale(1.14);box-shadow:0 0 38px #00f0ffcc}}
+        #centerPawEngine{animation:pawBreath 2.4s ease-in-out infinite !important}
+        #centerPawEngine.paw-wait{animation:none !important;opacity:.45}
+        @keyframes coinFall{to{transform:translateY(110vh) rotate(540deg)}}
+        .coin{position:fixed;top:-40px;font-size:26px;z-index:9999;pointer-events:none;animation:coinFall 1.6s ease-in forwards}
+        .scratch-wrap{position:relative;width:300px;height:140px;margin:16px auto;border-radius:12px;overflow:hidden}
+        .scratch-prize{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111827;border:1px solid #00f0ff;font-size:40px}
+        #scratchCv{position:absolute;inset:0;touch-action:none}
+        .fruit-area{position:relative;height:320px;background:#0b1220;border:1px solid #1f2937;border-radius:12px;overflow:hidden;touch-action:none}
+        .fruit{position:absolute;top:-30px;font-size:34px;transition:top 2.4s linear;user-select:none}
     </style>
 </head>
 <body>
@@ -219,6 +229,8 @@
         <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openDaily();">📆 Daily Login</div>
         <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openSpin();">🎡 Spin the Wheel</div>
         <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openSteps();">🚶 Walking Steps</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openScratch();">🎟️ Scratch &amp; Win Paws</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openFruit();">🍉 Fruit Tap</div>
     </div>
 
     <!-- RENDERING BOX REGION FOR SUB-TILES -->
@@ -231,7 +243,7 @@
             <button class="close-screen-btn" onclick="closeApplicationScreen('cashoutScreen')">×</button>
         </div>
         <div class="form-group">
-            <label>Method</label><select id="withdrawMethod" class="form-input"><option>GCash</option><option>Maya</option><option>Bank Transfer</option></select></div><div class="form-group"><label>Amount (₱, minimum 50)</label><input type="number" id="withdrawAmount" class="form-input" value="50" min="50"></div><div class="form-group"><label>Account Number / Mobile</label>
+            <label>Method</label><input id="withdrawMethod" class="form-input" value="UNO Wallet" readonly></div><div class="form-group"><label>Amount (₱, minimum 50)</label><input type="number" id="withdrawAmount" class="form-input" value="50" min="50"></div><div class="form-group"><label>Your UNO Wallet ID / Email</label>
             <input type="text" class="form-input" id="withdrawalAccountField" placeholder="Enter recipient routing data">
         </div>
         <button class="action-submit-btn" onclick="processWithdrawalRequest()">Request Cash Out</button>
@@ -260,9 +272,23 @@
     </div>
     <div class="app-screen" id="stepsScreen">
         <div class="screen-header"><h2 class="neon-text">Walking Steps</h2><button class="close-screen-btn" onclick="closeApplicationScreen('stepsScreen')">×</button></div>
-        <div class="neon-text" id="stepCount" style="font-size:56px;text-align:center;margin:24px 0">0</div>
+        <div style="position:relative;width:200px;height:200px;margin:20px auto"><svg width="200" height="200" viewBox="0 0 200 200" style="transform:rotate(-90deg)"><circle cx="100" cy="100" r="88" fill="none" stroke="#1f2937" stroke-width="14"/><circle id="stepRing" cx="100" cy="100" r="88" fill="none" stroke="#00f0ff" stroke-width="14" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553" style="transition:stroke-dashoffset .6s"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="neon-text" id="stepCount" style="font-size:44px">0</div><div style="font-size:11px;color:#9ca3af">of 10,000 steps</div></div></div><p id="stepStats" style="text-align:center;font-size:13px;margin-bottom:8px">0.00 km · 0 kcal</p>
         <p style="font-size:12px;color:#9ca3af;text-align:center">Earn ₱0.01 per 1,000 steps (max 10,000 steps/day). Steps count while the app is open. Minimum 500 steps to claim.</p>
         <button class="action-submit-btn" style="margin-top:16px" onclick="claimSteps()">Claim Steps Reward</button>
+    </div>
+
+    <div class="app-screen" id="scratchScreen">
+        <div class="screen-header"><h2 class="neon-text">Scratch &amp; Win Paws</h2><button class="close-screen-btn" onclick="closeApplicationScreen('scratchScreen')">×</button></div>
+        <p style="font-size:12px;color:#9ca3af;text-align:center">Get a card, then scratch it with your finger. 3 cards per day.</p>
+        <div class="scratch-wrap"><div class="scratch-prize" id="scratchPrize">🐾 🐾 🐾</div><canvas id="scratchCv" width="300" height="140"></canvas></div>
+        <button class="action-submit-btn" onclick="getCard()">Get Scratch Card</button>
+    </div>
+    <div class="app-screen" id="fruitScreen">
+        <div class="screen-header"><h2 class="neon-text">Fruit Tap</h2><button class="close-screen-btn" onclick="closeApplicationScreen('fruitScreen')">×</button></div>
+        <p style="font-size:12px;color:#9ca3af;text-align:center">Tap the falling fruit for 20 seconds. Up to ₱0.025 per game, 3 games per day.</p>
+        <div id="fruitScore" class="neon-text" style="text-align:center;font-size:20px;margin:8px 0">Score: 0</div>
+        <div id="fruitArea" class="fruit-area"></div>
+        <button class="action-submit-btn" id="fruitBtn" style="margin-top:12px" onclick="startFruit()">Play Fruit Tap</button>
     </div>
 
     <!-- STICKY BOTTOM AD BANNER HOLDER -->
@@ -507,7 +533,7 @@
                 </div>
                 <div class="game-card" onclick="triggerRewardedAd()">
                     <div class="card-icon">📺</div>
-                    <div class="card-label">Watch Rewarded Ad</div></div><div class="game-card" onclick="openSpin()"><div class="card-icon">🎡</div><div class="card-label">Spin the Wheel</div></div><div class="game-card" onclick="openSteps()"><div class="card-icon">🚶</div><div class="card-label">Walking Steps</div>
+                    <div class="card-label">Watch Rewarded Ad</div></div><div class="game-card" onclick="openSpin()"><div class="card-icon">🎡</div><div class="card-label">Spin the Wheel</div></div><div class="game-card" onclick="openSteps()"><div class="card-icon">🚶</div><div class="card-label">Walking Steps</div></div><div class="game-card" onclick="openScratch()"><div class="card-icon">🎟️</div><div class="card-label">Scratch &amp; Win Paws</div></div><div class="game-card" onclick="openFruit()"><div class="card-icon">🍉</div><div class="card-label">Fruit Tap</div>
                 </div>
             </div>`;
     }
@@ -538,14 +564,19 @@
     }
     let adBusy = false;
     window.triggerRewardedAd = async function () {
-        if (!NATIVE) { alert('Rewarded ads only play inside the installed app.'); return; }
+        if (!NATIVE || !AdMob) { alert('Rewarded ads only play inside the installed app.'); return; }
         if (adBusy) return; adBusy = true;
+        let rewarded = false, h = null;
         try {
+            h = await AdMob.addListener('onRewardedVideoAdReward', () => { rewarded = true; });
             await AdMob.prepareRewardVideoAd({ adId: AD_CONFIG.rewardedAdUnitId, isTesting: ADMOB_TESTING });
             await AdMob.showRewardVideoAd();
+            await new Promise(r => setTimeout(r, 800));
+            if (!rewarded) throw new Error('Watch the full ad to get your reward.');
             const d = await rpc('claim_ad_reward');
             applyBal(d); alert('Ad completed! ' + money(d.reward) + ' added to your balance.');
-        } catch (e) { alert(e && e.message ? e.message : 'No ad available right now. Please try again later.'); }
+        } catch (e) { alert('Ad problem: ' + ((e && e.message) || JSON.stringify(e) || 'ad not ready, try again in a minute')); }
+        try { if (h) h.remove(); } catch (e) {}
         adBusy = false;
     };
 
@@ -592,7 +623,7 @@
     let stepState = null;
     try { stepState = JSON.parse(localStorage.getItem('mp_steps')); } catch (e) {}
     if (!stepState || stepState.d !== phToday()) stepState = { d: phToday(), n: 0 };
-    const saveSteps = () => { try { localStorage.setItem('mp_steps', JSON.stringify(stepState)); } catch (e) {} $('stepCount').innerText = stepState.n; };
+    const saveSteps = () => { try { localStorage.setItem('mp_steps', JSON.stringify(stepState)); } catch (e) {} $('stepCount').innerText = stepState.n; try { $('stepRing').style.strokeDashoffset = 553 * (1 - Math.min(1, stepState.n / 10000)); $('stepStats').innerText = (stepState.n * 0.0007).toFixed(2) + ' km · ' + Math.round(stepState.n * 0.04) + ' kcal'; } catch (e) {} };
     let lastMag = 0, lastStepAt = 0;
     window.addEventListener('devicemotion', ev => {
         const a = ev.accelerationIncludingGravity; if (!a) return;
@@ -620,6 +651,80 @@
             alert('Withdrawal of ₱' + amt.toFixed(2) + ' to ' + method + ' submitted. Status: pending review.');
             closeApplicationScreen('cashoutScreen');
         } catch (e) { alert(e.message); }
+    };
+/* MINING: 3-hour cycle with countdown, breathing paw, coin rain */
+    const MINE_MS = 3 * 3600 * 1000; let nextMineAt = 0;
+    const hms = ms => { const t = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(t / 3600), Math.floor(t % 3600 / 60), t % 60].map(v => String(v).padStart(2, '0')).join(':'); };
+    function coinRain() { for (let i = 0; i < 28; i++) { const c = document.createElement('span'); c.className = 'coin'; c.textContent = '🪙'; c.style.left = Math.random() * 95 + 'vw'; c.style.animationDelay = Math.random() * 0.6 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 2400); } }
+    setInterval(() => {
+        const l = $('miningStatusText'), pw = $('centerPawEngine'); if (!l || !pw) return;
+        const left = nextMineAt - Date.now();
+        if (left > 0) { l.innerText = 'NEXT MINE IN ' + hms(left); l.style.color = '#9ca3af'; pw.classList.add('paw-wait'); }
+        else { l.innerText = 'TAP TO MINE'; l.style.color = '#00f0ff'; pw.classList.remove('paw-wait'); }
+    }, 1000);
+    window.refreshMining = async () => { try { const pr = await myProfile(); nextMineAt = pr.last_mine ? new Date(pr.last_mine).getTime() + MINE_MS : 0; } catch (e) {} };
+    try { supabase.auth.onAuthStateChange((ev, sess) => { if (sess) refreshMining(); }); } catch (e) {}
+    window.handleCentralMiningTap = async function () {
+        if (nextMineAt > Date.now()) { alert('Next mining in ' + hms(nextMineAt - Date.now())); return; }
+        try {
+            const bal = await rpc('secure_mining_claim', { payout_amount: 0.02 });
+            window.appState.balance = parseFloat(bal); syncGlobalReactiveUI();
+            nextMineAt = Date.now() + MINE_MS; coinRain();
+        } catch (e) { alert(e.message); }
+    };
+
+    /* UNO WALLET WITHDRAWAL INFO */
+    try {
+        $('cashoutScreen').querySelector('.screen-header').insertAdjacentHTML('afterend', '<div class="neon-border" style="padding:12px;border-radius:12px;margin-bottom:14px;font-size:12px;line-height:1.5">Withdrawals are paid to a <b>UNO Wallet</b>. No wallet yet? Register at <a href="https://uno.global" target="_blank" style="color:#00f0ff">uno.global</a> and use referral code <b class="neon-text">V98HAR</b> <button onclick="try{navigator.clipboard.writeText(\'V98HAR\');alert(\'Referral code copied\')}catch(e){}" style="background:none;border:1px solid #00f0ff;color:#00f0ff;border-radius:6px;padding:2px 8px">Copy</button><br><span style="color:#9ca3af">UNO is a third-party wallet. Registering with this code gives the app owner a referral bonus.</span></div>');
+    } catch (e) { console.log(e); }
+
+    /* SCRATCH & WIN PAWS */
+    let card = null, revealed = true;
+    const cv = $('scratchCv'), cover = () => {
+        const cx = cv.getContext('2d'); cx.globalCompositeOperation = 'source-over'; cx.fillStyle = '#64748b'; cx.fillRect(0, 0, 300, 140);
+        cx.fillStyle = '#e2e8f0'; cx.font = 'bold 18px sans-serif'; cx.textAlign = 'center'; cx.fillText('SCRATCH HERE 🐾', 150, 76);
+    };
+    const scr = e => {
+        if (!card || revealed) return; e.preventDefault();
+        const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e, cx = cv.getContext('2d');
+        cx.globalCompositeOperation = 'destination-out'; cx.beginPath(); cx.arc((t.clientX - r.left) * 300 / r.width, (t.clientY - r.top) * 140 / r.height, 20, 0, 7); cx.fill();
+    };
+    const doneScr = () => {
+        if (!card || revealed) return;
+        const d = cv.getContext('2d').getImageData(0, 0, 300, 140).data; let c = 0;
+        for (let i = 3; i < d.length; i += 16) if (d[i] === 0) c++;
+        if (c / (d.length / 16) > 0.45) { revealed = true; cv.getContext('2d').clearRect(0, 0, 300, 140); applyBal(card); if (card.win) { coinRain(); alert('You won ' + money(card.reward) + '!'); } }
+    };
+    cv.addEventListener('touchmove', scr, { passive: false }); cv.addEventListener('mousemove', e => { if (e.buttons) scr(e); });
+    cv.addEventListener('touchend', doneScr); cv.addEventListener('mouseup', doneScr);
+    window.openScratch = () => { openApplicationScreen('scratchScreen'); cover(); };
+    window.getCard = async function () {
+        if (card && !revealed) { alert('Finish scratching your current card first.'); return; }
+        try { card = await rpc('scratch_card'); } catch (e) { alert(e.message); return; }
+        const row = card.win ? ['🐾', '🐾', '🐾'] : ['🐾', '🐱', '🐶'].sort(() => Math.random() - .5);
+        $('scratchPrize').innerHTML = `<div>${row.join(' ')}</div><div class="neon-text" style="font-size:18px">${card.win ? 'YOU WIN ' + money(card.reward) : 'Try again!'}</div>`;
+        revealed = false; cover();
+    };
+
+    /* FRUIT TAP */
+    const FRUITS = ['🍎', '🍉', '🍌', '🍇', '🍓', '🍍', '🍊']; let fScore = 0, fRun = false;
+    window.openFruit = () => openApplicationScreen('fruitScreen');
+    window.startFruit = function () {
+        if (fRun) return; fRun = true; fScore = 0; let t = 20;
+        const area = $('fruitArea'), btn = $('fruitBtn'); area.innerHTML = ''; btn.disabled = true; $('fruitScore').innerText = 'Score: 0';
+        const spawn = setInterval(() => {
+            const f = document.createElement('span'); f.className = 'fruit'; f.textContent = FRUITS[Math.floor(Math.random() * FRUITS.length)]; f.style.left = Math.random() * 85 + '%';
+            const hit = e => { if (e) e.preventDefault(); if (f.dataset.d) return; f.dataset.d = 1; fScore++; $('fruitScore').innerText = 'Score: ' + fScore; f.remove(); };
+            f.addEventListener('touchstart', hit, { passive: false }); f.addEventListener('mousedown', hit);
+            area.appendChild(f); requestAnimationFrame(() => requestAnimationFrame(() => { f.style.top = '290px'; })); setTimeout(() => f.remove(), 2600);
+        }, 550);
+        const clock = setInterval(async () => {
+            t--; btn.innerText = 'Time: ' + t + 's';
+            if (t <= 0) {
+                clearInterval(clock); clearInterval(spawn); fRun = false; btn.disabled = false; btn.innerText = 'Play Fruit Tap';
+                try { const d = await rpc('claim_fruit', { p_score: fScore }); applyBal(d); alert('Score ' + fScore + '! You earned ' + money(d.reward)); } catch (e) { alert(e.message); }
+            }
+        }, 1000);
     };
     initAds();
 
