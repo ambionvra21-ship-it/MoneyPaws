@@ -5,7 +5,7 @@ on:
 
 env:
   # Google's TEST app ID. Replace with YOUR AdMob App ID (it contains a "~"), e.g. ca-app-pub-6655685917040449~xxxxxxxxxx
-    ADMOB_APP_ID: ca-app-pub-6655685917040449~5170056805
+  ADMOB_APP_ID: ca-app-pub-6655685917040449~5170056805
 
 jobs:
   build:
@@ -33,6 +33,7 @@ jobs:
         run: |
           F=android/app/src/main/AndroidManifest.xml
           grep -q 'ads.APPLICATION_ID' $F || sed -i "s#</application>#<meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\"/></application>#" $F
+          grep -q POST_NOTIFICATIONS $F || sed -i 's#<application#<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application#' $F
 
       - name: Build Debug APK
         working-directory: moneypaws-apk-project/proj/android
