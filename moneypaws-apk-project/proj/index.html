@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<!-- MoneyPaws v1.0 marker (used by the build workflow) -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MoneyPaws Cloud Platform</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .neon-text {
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+        }
+
+        .neon-border {
+            border: 1px solid #00f0ff;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+        }
+
+        header {
+            width: 100%;
+            height: 60px;
+            background-color: #111827;
+            border-bottom: 2px solid #00f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            position: fixed;
+            top: 0; left: 0; z-index: 1000;
+        }
+
+        .nav-icon {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            background-color: #1f2937;
+        }
+
+        .wallet-banner {
+            margin-top: 60px;
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .wallet-row { display: flex; justify-content: space-between; align-items: center; }
+        .balance-box { display: flex; flex-direction: column; }
+        .balance-label { font-size: 11px; text-transform: uppercase; color: #9ca3af; }
+        .balance-value { font-size: 26px; font-weight: 700; }
+
+        .cashout-trigger {
+            padding: 10px 16px;
+            background-color: #0b0f19;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .progress-container { width: 100%; background-color: #0b0f19; height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: #00f0ff; transition: width 0.3s ease; }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; }
+
+        .marquee-wrapper { background-color: #111827; height: 32px; overflow: hidden; display: flex; align-items: center; }
+        .marquee-content { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scroller 20s linear infinite; }
+        @keyframes scroller { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
+
+        main { padding: 16px; padding-bottom: 80px; display: flex; flex-direction: column; gap: 20px; }
+
+        .app-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2000; background-color: #0b0f19;
+            padding: 80px 20px 20px 20px;
+        }
+        .app-screen.active-view { display: block; }
+        .screen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .close-screen-btn { background-color: #1f2937; border: none; color: #fff; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+
+        .side-drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background-color: #111827; border-right: 2px solid #00f0ff; z-index: 3000; transition: left 0.3s ease; padding: 20px; }
+        .side-drawer.drawer-open { left: 0; }
+        .drawer-menu-item { padding: 12px; background-color: #1f2937; border-radius: 8px; margin-bottom: 10px; cursor: pointer; }
+
+        .auth-gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0b0f19; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .auth-card { background-color: #111827; border-radius: 16px; padding: 24px; width: 100%; max-width: 320px; text-align: center; }
+        .auth-toggle-row { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 1px solid #1f2937; padding-bottom: 10px; }
+        .auth-toggle-tab { font-size: 14px; font-weight: 700; color: #4b5563; cursor: pointer; }
+        .auth-toggle-tab.active-tab { color: #00f0ff; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; text-align: left; }
+        .form-group label { font-size: 12px; color: #9ca3af; text-transform: uppercase; font-weight: 600; }
+        .form-input { width: 100%; padding: 12px; background-color: #111827; border: 1px solid #374151; border-radius: 8px; color: #ffffff; }
+        .form-input:focus { outline: none; border-color: #00f0ff; }
+
+        .action-submit-btn { width: 100%; padding: 14px; background-color: #00f0ff; color: #0b0f19; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+        .auth-hint-text { font-size: 11px; color: #9ca3af; margin-top: 14px; line-height: 1.4; }
+
+        .mining-container { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 24px; background: #111827; border-radius: 16px; }
+        .breathing-paw { width: 100px; height: 100px; background-color: #1f2937; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; cursor: pointer; user-select: none; border: 2px solid #00f0ff; margin-bottom: 12px; }
+        .mining-status { font-size: 14px; font-weight: 700; }
+        .launcher-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; }
+        .game-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        
+        #admob-sticky-footer { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 50px; 
+            background-color: #111827; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+            border-top: 1px solid #1f2937; 
+        }
+        .admob-placeholder-text { font-size: 10px; color: #00f0ff; text-transform: uppercase; letter-spacing: 1px; }
+    .day-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}
+        .day-box{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:10px 4px;text-align:center;font-size:11px}
+        .day-box.done{border-color:#00f0ff;color:#00f0ff}
+        .wheel-wrap{position:relative;width:230px;height:230px;margin:28px auto}
+        .wheel{position:relative;width:100%;height:100%;border-radius:50%;border:3px solid #00f0ff;background:conic-gradient(#0e7490 0 60deg,#1e293b 0 120deg,#0e7490 0 180deg,#1e293b 0 240deg,#0e7490 0 300deg,#1e293b 0 360deg);transition:transform 4s cubic-bezier(.17,.67,.12,1)}
+        .wheel-pointer{position:absolute;top:-20px;left:50%;transform:translateX(-50%);color:#00f0ff;z-index:2;font-size:22px}
+    @keyframes pawBreath{0%,100%{transform:scale(1);box-shadow:0 0 14px #00f0ff55}50%{transform:scale(1.14);box-shadow:0 0 38px #00f0ffcc}}
+        #centerPawEngine{animation:pawBreath 2.4s ease-in-out infinite !important}
+        #centerPawEngine.paw-wait{animation:none !important;opacity:.45}
+        @keyframes coinFall{to{transform:translateY(110vh) rotate(540deg)}}
+        .coin{position:fixed;top:-40px;font-size:26px;z-index:9999;pointer-events:none;animation:coinFall 1.6s ease-in forwards}
+        .scratch-wrap{position:relative;width:300px;height:140px;margin:16px auto;border-radius:12px;overflow:hidden}
+        .scratch-prize{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111827;border:1px solid #00f0ff;font-size:40px}
+        #scratchCv{position:absolute;inset:0;touch-action:none}
+        .fruit-area{position:relative;height:320px;background:#0b1220;border:1px solid #1f2937;border-radius:12px;overflow:hidden;touch-action:none}
+        .fruit{position:absolute;top:-30px;font-size:34px;transition:top 2.4s linear;user-select:none}
+    .app-screen{padding-bottom:160px !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain} #legalScreen{z-index:100000 !important}
+    </style>
+</head>
+<body>
+
+    <!-- SECURE APPLICATION ACCOUNT LOCK COVER LAYER -->
+    <div class="auth-gate-overlay" id="applicationAuthGate">
+        <div class="auth-card neon-border">
+            <h1 class="neon-text" style="font-size: 24px; margin-bottom: 4px; text-transform:uppercase; letter-spacing:1px;">MoneyPaws</h1>
+            <p style="font-size: 11px; color:#9ca3af; margin-bottom: 20px;">Secure Cloud Portal Platform Login</p>
+            
+            <div class="auth-toggle-row">
+                <span class="auth-toggle-tab active-tab" id="tabLogin" onclick="toggleAuthViewMode('LOGIN')">Log In</span>
+                <span class="auth-toggle-tab" id="tabSignUp" onclick="toggleAuthViewMode('SIGNUP')">Register</span>
+            </div>
+
+            <div class="form-group">
+                <label>Email Identification Address</label>
+                <input type="email" class="form-input" id="authEmailInput" placeholder="name@email.com">
+            </div>
+
+            <div class="form-group">
+                <label>Secure Gate Code Word</label>
+                <div style="position:relative"><input type="password" class="form-input" id="authPasswordInput" placeholder="••••••••" style="padding-right:64px"><span id="pwToggle" onclick="togglePw('authPasswordInput','pwToggle')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:#00f0ff;cursor:pointer;padding:6px">Show</span></div>
+            </div>
+
+            <div style="text-align:right;margin:-6px 0 8px"><a href="#" id="forgotLink" onclick="openReset();return false" style="font-size:12px;color:#00f0ff">Forgot password?</a></div><label style="display:flex;gap:8px;font-size:11px;color:#9ca3af;margin:8px 0;align-items:flex-start"><input type="checkbox" id="agreeBox"> <span>I am 18+ and agree to the <a href="#" onclick="openLegal();return false" style="color:#00f0ff">Terms &amp; Privacy Policy</a></span></label><button class="action-submit-btn" id="authActionButton" onclick="processAuthSubmission()">Sign Into Account</button>
+            
+            <p class="auth-hint-text" id="authContextHint">
+                Logging in syncs your balance ledger, task streaks, and pending payouts securely via Supabase Cloud infrastructure modules.
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN DEVICE SHELL HEADER AREA -->
+    <header>
+        <div class="nav-icon" onclick="toggleNavigationDrawer(true)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </div>
+        <div class="app-title neon-text">MoneyPaws</div>
+        <div class="nav-icon" onclick="openApplicationScreen('profileScreen')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+    </header>
+
+    <!-- FINANCIAL DISPLAY STATUS MODULE -->
+    <div class="wallet-banner">
+        <div class="wallet-row">
+            <div class="balance-box">
+                <span class="balance-label">Total Earnings Balance</span>
+                <span class="balance-value neon-text" id="globalDisplayBalance">₱0.00</span>
+            </div>
+            <div class="cashout-trigger neon-border" onclick="openApplicationScreen('cashoutScreen')">Cash Out</div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="globalMilestoneProgress"></div>
+        </div>
+        <div class="progress-labels">
+            <span>Next Target Threshold:</span>
+            <span id="globalNextThresholdLabel">₱5 · 500 🐾</span>
+        </div>
+    </div>
+
+    <!-- TICKER TEXT RUNNER SYSTEM -->
+    <div class="marquee-wrapper">
+        <div class="marquee-content">
+            🐾 PAW MINING • 📆 DAILY LOGINS • 🎡 SPIN THE WHEEL • 📺 ADS REWARDS • 🚶 WALKING STEPS • ONE WALLET ECOSYSTEM INTEGRATION CORES ACTIVE
+        </div>
+    </div>
+
+    <!-- SIDE DRAWER INTERACTION LAYER -->
+    <div class="side-drawer" id="appSideDrawer">
+        <div class="app-title neon-text" style="font-size: 24px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">Menu</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openApplicationScreen('cashoutScreen');">📥 Cash Out / Wallet</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openApplicationScreen('profileScreen');">👤 My Profile Account</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openDaily();">📆 Daily Login</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openSpin();">🎡 Spin the Wheel</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openSteps();">🚶 Walking Steps</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openScratch();">🎟️ Scratch &amp; Win Paws</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openFruit();">🍉 Fruit Tap</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openLegal();">📄 Terms &amp; Privacy</div>
+        <div class="drawer-menu-item" onclick="toggleNavigationDrawer(false); openApplicationScreen('helpScreen');">❓ Help &amp; Community</div>
+    </div>
+
+    <!-- RENDERING BOX REGION FOR SUB-TILES -->
+    <main id="mainDashboardView"></main>
+
+    <!-- FLOATING INTERFACE TILES FRAMEWORK WINDOWS -->
+    <div class="app-screen" id="cashoutScreen">
+        <div class="screen-header">
+            <h2 class="neon-text">Withdraw Assets</h2>
+            <button class="close-screen-btn" onclick="closeApplicationScreen('cashoutScreen')">×</button>
+        </div>
+        <div class="form-group">
+            <label>Method</label><select id="withdrawMethod" class="form-input" onchange="methodChanged()"><option>UNO Wallet</option><option>GCash</option><option>Maya</option></select></div><div class="form-group"><label>Cash-out amount</label><select id="withdrawAmount" class="form-input"><option value="5">₱5 (500 PawCoins)</option><option value="10">₱10 (1,000 PawCoins)</option><option value="20">₱20 (2,000 PawCoins)</option><option value="50">₱50 (5,000 PawCoins)</option><option value="100">₱100 (10,000 PawCoins)</option><option value="200">₱200 (20,000 PawCoins)</option><option value="300">₱300 (30,000 PawCoins)</option><option value="400">₱400 (40,000 PawCoins)</option><option value="500">₱500 (50,000 PawCoins)</option><option value="1000">₱1,000 (100,000 PawCoins)</option></select></div><div class="form-group"><label>How do we find your UNO wallet?</label><select id="withdrawIdType" class="form-input" onchange="idTypeChanged()"><option value="phone">Phone number</option><option value="username">Username</option><option value="qr">QR code (upload)</option></select></div><div class="form-group"><label id="idValueLabel">UNO phone number</label>
+            <input type="text" class="form-input" id="withdrawalAccountField" placeholder="Enter recipient routing data">
+        </div>
+        <button class="action-submit-btn" onclick="processWithdrawalRequest()">Request Cash Out</button>
+    </div>
+
+    <div class="app-screen" id="profileScreen">
+        <div class="screen-header">
+            <h2 class="neon-text">My Profile Account</h2>
+            <button class="close-screen-btn" onclick="closeApplicationScreen('profileScreen')">×</button>
+        </div>
+        <div style="background-color:#111827; padding:20px; border-radius:12px;" class="neon-border">
+            <div id="profileBody">Loading...</div>
+        </div>
+    </div>
+
+    <div class="app-screen" id="dailyScreen">
+        <div class="screen-header"><h2 class="neon-text">Daily Login</h2><button class="close-screen-btn" onclick="closeApplicationScreen('dailyScreen')">×</button></div>
+        <p style="font-size:12px;color:#9ca3af">Log in every day to grow your streak. Miss a day and it resets.</p>
+        <div class="day-grid" id="dayGrid"></div>
+        <button class="action-submit-btn" id="dailyBtn" onclick="claimDaily()">Claim Today's Reward</button>
+    </div>
+    <div class="app-screen" id="spinScreen">
+        <div class="screen-header"><h2 class="neon-text">Spin the Wheel</h2><button class="close-screen-btn" onclick="closeApplicationScreen('spinScreen')">×</button></div>
+        <div class="wheel-wrap"><div class="wheel-pointer">▼</div><div class="wheel" id="wheel"></div></div>
+        <button class="action-submit-btn" id="spinBtn" onclick="doSpin()">Spin (1 free spin per day)</button>
+    </div>
+    <div class="app-screen" id="stepsScreen">
+        <div class="screen-header"><h2 class="neon-text">Walking Steps</h2><button class="close-screen-btn" onclick="closeApplicationScreen('stepsScreen')">×</button></div>
+        <div style="position:relative;width:200px;height:200px;margin:20px auto"><svg width="200" height="200" viewBox="0 0 200 200" style="transform:rotate(-90deg)"><circle cx="100" cy="100" r="88" fill="none" stroke="#1f2937" stroke-width="14"/><circle id="stepRing" cx="100" cy="100" r="88" fill="none" stroke="#00f0ff" stroke-width="14" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553" style="transition:stroke-dashoffset .6s"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="neon-text" id="stepCount" style="font-size:44px">0</div><div style="font-size:11px;color:#9ca3af">of 10,000 steps</div></div></div><p id="stepStats" style="text-align:center;font-size:13px;margin-bottom:8px">0.00 km · 0 kcal</p>
+        <p style="font-size:12px;color:#9ca3af;text-align:center">Earn ₱0.01 per 1,000 steps (max 10,000 steps/day). Steps count while the app is open. Minimum 500 steps to claim.</p>
+        <button class="action-submit-btn" style="margin-top:16px" onclick="claimSteps()">Claim Steps Reward</button>
+    </div>
+
+    <div class="app-screen" id="scratchScreen">
+        <div class="screen-header"><h2 class="neon-text">Scratch &amp; Win Paws</h2><button class="close-screen-btn" onclick="closeApplicationScreen('scratchScreen')">×</button></div>
+        <p style="font-size:12px;color:#9ca3af;text-align:center">Get a card, then scratch it with your finger. 3 cards per day.</p>
+        <div class="scratch-wrap"><div class="scratch-prize" id="scratchPrize">🐾 🐾 🐾</div><canvas id="scratchCv" width="300" height="140"></canvas></div>
+        <button class="action-submit-btn" onclick="getCard()">Get Scratch Card</button>
+    </div>
+    <div class="app-screen" id="fruitScreen">
+        <div class="screen-header"><h2 class="neon-text">Fruit Tap</h2><button class="close-screen-btn" onclick="closeApplicationScreen('fruitScreen')">×</button></div>
+        <p style="font-size:12px;color:#9ca3af;text-align:center">Tap the falling fruit for 20 seconds. Up to ₱0.025 per game, 3 games per day.</p>
+        <div id="fruitScore" class="neon-text" style="text-align:center;font-size:20px;margin:8px 0">Score: 0</div>
+        <div id="fruitArea" class="fruit-area"></div>
+        <button class="action-submit-btn" id="fruitBtn" style="margin-top:12px" onclick="startFruit()">Play Fruit Tap</button>
+    </div>
+
+    <div class="app-screen" id="legalScreen">
+        <div class="screen-header"><h2 class="neon-text">Terms &amp; Privacy</h2><button class="close-screen-btn" onclick="closeApplicationScreen('legalScreen')">×</button></div>
+        <div style="font-size:12px;line-height:1.6;color:#d1d5db">
+        <p><b>Rewards.</b> Rewards are small, limited per day, and paid from ad revenue. They are not a salary or guaranteed income. Cash-out amounts run from ₱5 to ₱1,000, one per day. Each amount needs enough PawCoins plus a minimum number of rewarded ads watched, and larger amounts also need an older account (see Cash Out for the full list). Payouts go to the UNO Wallet, GCash or Maya account you provide, are reviewed manually, and may be delayed. Each wallet number can be linked to one MoneyPaws account only.</p>
+        <p><b>Fair use.</b> One account per person. Fake accounts, self-referrals, bots, emulators, or any ad-click manipulation lead to a ban and loss of balance. Referral bonuses (₱0.50 for you and your friend) unlock after the friend watches 10 rewarded ads.</p>
+        <p><b>Data we collect.</b> Email, reward activity, referral codes, withdrawal details (including a QR image if you upload one), and ad data collected by Google AdMob (such as your advertising ID). We do not sell personal data. Hosting is by Supabase. UNO is a third-party wallet with its own policy.</p>
+        <p><b>Steps.</b> Estimated from your phone's motion sensor while the app is open.</p>
+        <p><b>Your choices.</b> Delete your account any time in Profile → Delete my account. Not for users under 18. Contact: moneypaws.app.help@gmail.com</p>
+        </div>
+    </div>
+
+    <div class="app-screen" id="helpScreen">
+        <div class="screen-header"><h2 class="neon-text">Help &amp; Community</h2><button class="close-screen-btn" onclick="closeApplicationScreen('helpScreen')">×</button></div>
+        <a class="action-submit-btn" href="https://www.facebook.com/MoneyPawsAPP/" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">📘 Join our Facebook page &amp; see payout proofs</a>
+        <p style="font-size:12px;color:#9ca3af;margin-bottom:6px">Share MoneyPaws with friends:</p>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button class="action-submit-btn" style="background:#1877f2;color:#fff" onclick="shareTo('fb')">Facebook</button>
+            <button class="action-submit-btn" style="background:#111;color:#fff;border:1px solid #444" onclick="shareTo('x')">X</button>
+            <button class="action-submit-btn" style="background:#c13584;color:#fff" onclick="shareTo('ig')">Instagram</button>
+        </div>
+        <div style="font-size:12px;line-height:1.6;color:#d1d5db">
+        <p><b>How do I earn?</b> Mine every 3 hours, watch rewarded ads, claim your daily login, spin, scratch cards, Fruit Tap, steps, the daily mission, and referrals.</p>
+        <p><b>Why are there ads?</b> Ads pay for the rewards. More ads watched means more PawCoins for you.</p>
+        <p><b>How do I cash out?</b> Open Cash Out and pick an amount and a wallet (UNO, GCash or Maya). Every amount needs enough PawCoins (100 PawCoins = ₱1) and a minimum number of rewarded ads watched. Larger amounts also need an older account. The list on that page shows what is left to unlock.</p>
+        <p><b>Why is my cash-out pending?</b> We review each request by hand and send it to your wallet. Payout proofs are posted on our Facebook page.</p>
+        <p><b>Delete my account?</b> Profile, then Delete my account.</p>
+        <p><b>Need help?</b> Email moneypaws.app.help@gmail.com or message our Facebook page.</p>
+        </div>
+    </div>
+    <div id="updateOverlay" style="display:none;position:fixed;inset:0;z-index:100002;background:#0b0b19;align-items:center;justify-content:center;padding:24px;text-align:center">
+        <div class="auth-card neon-border"><h1 class="neon-text" style="font-size:20px">Update required</h1><p style="font-size:13px;color:#9ca3af;margin:12px 0">A new version of MoneyPaws is available. Please update to keep earning.</p><a class="action-submit-btn" id="updateBtn" href="#" target="_blank" rel="noopener" style="display:block;text-decoration:none">Download update</a></div>
+    </div>
+    <div id="resetOverlay" style="display:none;position:fixed;inset:0;z-index:100001;background:#0b0b19;overflow-y:auto;padding:24px 16px 160px;box-sizing:border-box">
+        <div class="auth-card neon-border" style="margin:40px auto 0">
+            <h1 class="neon-text" style="font-size:20px;margin-bottom:6px">Reset Password</h1>
+            <p id="resetHint" style="font-size:12px;color:#9ca3af;margin-bottom:14px">Enter your account email and we will send you a code.</p>
+            <div class="form-group"><label>Email</label><input type="email" class="form-input" id="resetEmail" placeholder="name@email.com"></div>
+            <div id="resetStep2" style="display:none">
+                <div class="form-group"><label>Code from your email</label><input type="text" inputmode="numeric" class="form-input" id="resetCode" placeholder="Enter the code"></div>
+                <div class="form-group"><label>New password (at least 6 characters)</label><div style="position:relative"><input type="password" class="form-input" id="resetNewPw" style="padding-right:64px"><span id="pwToggle2" onclick="togglePw('resetNewPw','pwToggle2')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:#00f0ff;cursor:pointer;padding:6px">Show</span></div></div>
+            </div>
+            <button class="action-submit-btn" id="resetBtn" onclick="resetStep()">Send code</button>
+            <p style="text-align:center;margin-top:12px"><a href="#" onclick="closeReset();return false" style="font-size:12px;color:#9ca3af">Back to log in</a></p>
+        </div>
+    </div>
+
+    <!-- STICKY BOTTOM AD BANNER HOLDER -->
+    <div id="admob-sticky-footer" data-ad-unit="ca-app-pub-6655685917040449/1985937373">
+        <div class="admob-placeholder-text">MoneyPaws Bottom Banner Active</div>
+    </div>
+
+    <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    window.addEventListener('error', e => { try { if (ADMOB_TESTING) alert('App error: ' + e.message); } catch (x) {} });
+
+    /* ==========================================================
+       🔒 ADMOB & SUPABASE PRODUCTION CONFIGURATION
+       ========================================================== */
+    const AD_CONFIG = {
+        bannerAdUnitId: "ca-app-pub-6655685917040449/1985937373",
+        rewardedAdUnitId: "ca-app-pub-6655685917040449/3704097744"
+    };
+
+    const SUPABASE_URL = "https://ddikgztnzuexjneaynup.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_AUHP-CPN4DsE8xhKDIkMvA_C80hCyLI"; 
+    
+    let supabase = null;
+    let activeAuthMode = "LOGIN";
+
+    window.appState = { balance: 0.00 };
+    const THRESHOLDS = [5, 10, 20, 50, 100, 200, 300, 400, 500, 1000];
+
+    try {
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("[Supabase] ESM Module client initialized successfully.");
+        
+        supabase.auth.getSession().then(({ data }) => {
+            if (data && data.session) {
+                bypassAuthGate(data.session.user);
+            }
+        }).catch(err => console.log("Session recovery skipped:", err));
+    } catch (fail) {
+        console.error("Initialization failed:", fail);
+    }
+
+    /* --- REWARDED VIDEO AD PROCESSOR (5% USER EARNINGS RATIO) --- */
+    window.triggerRewardedAd = function() {
+        alert("Playing Rewarded Video Ad...\n(Unit ID: " + AD_CONFIG.rewardedAdUnitId + ")");
+        
+        setTimeout(() => {
+            const rewardAmount = 0.01; // 5% allocation (₱0.01) based on standard ad eCPM
+            
+            // Perform secure backend credit update
+            if (supabase) {
+                supabase.rpc('secure_mining_claim', { payout_amount: rewardAmount })
+                .then(({ data, error }) => {
+                    if (!error && data !== null) {
+                        window.appState.balance = parseFloat(data);
+                    } else {
+                        window.appState.balance += rewardAmount;
+                    }
+                    syncGlobalReactiveUI();
+                    alert(`Ad Completed! ₱${rewardAmount.toFixed(2)} deposited to your cloud balance.`);
+                });
+            } else {
+                window.appState.balance += rewardAmount;
+                syncGlobalReactiveUI();
+                alert(`Ad Completed! ₱${rewardAmount.toFixed(2)} added to balance.`);
+            }
+        }, 2500);
+    };
+
+    /* --- AUTHENTICATION HANDLERS --- */
+    window.toggleAuthViewMode = function(mode) {
+        activeAuthMode = mode; try { document.getElementById('forgotLink').parentElement.style.display = mode === 'LOGIN' ? 'block' : 'none'; } catch (e) {}
+        const loginTab = document.getElementById('tabLogin');
+        const signupTab = document.getElementById('tabSignUp');
+        const actionBtn = document.getElementById('authActionButton');
+        const hintText = document.getElementById('authContextHint');
+
+        if (mode === "LOGIN") {
+            loginTab.classList.add('active-tab');
+            signupTab.classList.remove('active-tab');
+            actionBtn.innerText = "Sign Into Account";
+            hintText.innerText = "Logging in syncs your balance ledger, task streaks, and pending payouts securely via Supabase Cloud infrastructure modules.";
+        } else {
+            signupTab.classList.add('active-tab');
+            loginTab.classList.remove('active-tab');
+            actionBtn.innerText = "Create Fresh Profile";
+            hintText.innerText = "Verification required. Registration auto-provisions your individual isolated accounting wallet vault inside the server ledger loops.";
+        }
+    };
+
+    window.processAuthSubmission = function() {
+        if (!supabase) {
+            alert("Database engine is offline. Syncing pipeline vectors, please wait.");
+            return;
+        }
+
+        const email = document.getElementById('authEmailInput').value.trim();
+        const password = document.getElementById('authPasswordInput').value.trim();
+        const actionBtn = document.getElementById('authActionButton');
+
+        if (activeAuthMode === 'SIGNUP' && !document.getElementById('agreeBox').checked) { alert('Please agree to the Terms and Privacy Policy to register.'); return; }
+        if (!email || !password) {
+            alert("Please input all required credentials.");
+            return;
+        }
+
+        actionBtn.disabled = true;
+
+        if (activeAuthMode === "LOGIN") {
+            supabase.auth.signInWithPassword({ email, password })
+            .then(({ data, error }) => {
+                if (error) {
+                    alert("Authentication Error: " + error.message);
+                    actionBtn.disabled = false;
+                } else if (data && data.user) {
+                    bypassAuthGate(data.user);
+                }
+            }).catch(err => {
+                alert("Network failure: " + err.message);
+                actionBtn.disabled = false;
+            });
+        } else {
+            supabase.auth.signUp({ email, password })
+            .then(({ data, error }) => {
+                if (error) {
+                    alert("Registration Refused: " + error.message);
+                    actionBtn.disabled = false;
+                } else {
+                    alert("Success! Check your email verification link before logging in.");
+                    toggleAuthViewMode("LOGIN");
+                    actionBtn.disabled = false;
+                }
+            }).catch(err => {
+                alert("Network error: " + err.message);
+                actionBtn.disabled = false;
+            });
+        }
+    };
+
+    function bypassAuthGate(user) {
+        document.getElementById('applicationAuthGate').style.display = "none";
+        
+        supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+            .then(({ data, error }) => {
+                if (!error && data) {
+                    window.appState.balance = parseFloat(data.php_balance) || 0.00;
+                    syncGlobalReactiveUI();
+                }
+            });
+    }
+
+    /* --- UI CONTROLLERS --- */
+    window.toggleNavigationDrawer = function(open) {
+        const drawer = document.getElementById('appSideDrawer');
+        if (open) drawer.classList.add('drawer-open');
+        else drawer.classList.remove('drawer-open');
+    };
+
+    window.openApplicationScreen = function(id) {
+        const screen = document.getElementById(id);
+        if (screen) screen.classList.add('active-view');
+    };
+
+    window.closeApplicationScreen = function(id) {
+        const screen = document.getElementById(id);
+        if (screen) screen.classList.remove('active-view');
+    };
+
+    /* --- MINING ENGINE (5% USER EARNINGS RATIO) --- */
+    let isMiningActive = false;
+    window.handleCentralMiningTap = function() {
+        if (isMiningActive) return;
+        isMiningActive = true;
+
+        const label = document.getElementById('miningStatusText');
+        label.innerText = "MINING UNDERWAY...";
+        label.style.color = "#34d399";
+
+        setTimeout(() => {
+            isMiningActive = false;
+            label.innerText = "READY TO MINE";
+            label.style.color = "#00f0ff";
+            
+            const basePayoutAmount = 0.005; // 5% user allocation (₱0.005 per claim)
+
+            supabase
+                .rpc('secure_mining_claim', { payout_amount: basePayoutAmount })
+                .then(({ data, error }) => {
+                    if (error) {
+                        alert("Sync Error: " + error.message);
+                        return;
+                    }
+                    if (data !== null) {
+                        window.appState.balance = parseFloat(data);
+                        syncGlobalReactiveUI();
+                        alert(`Mining verified! Deposited ₱${basePayoutAmount.toFixed(3)} to your cloud vault.`);
+                    }
+                });
+
+        }, 3000);
+    };
+
+    function syncGlobalReactiveUI() {
+        document.getElementById('globalDisplayBalance').innerText = `₱${window.appState.balance.toFixed(2)}`; try { localStorage.setItem('mp_bal', window.appState.balance); } catch (e) {}
+        let currentTarget = THRESHOLDS[THRESHOLDS.length - 1];
+        for (let i = 0; i < THRESHOLDS.length; i++) {
+            if (window.appState.balance < THRESHOLDS[i]) {
+                currentTarget = THRESHOLDS[i];
+                break;
+            }
+        }
+        document.getElementById('globalNextThresholdLabel').innerText = `₱${currentTarget} · ${(currentTarget * 100).toLocaleString()} 🐾`;
+        const prevT = THRESHOLDS[THRESHOLDS.indexOf(currentTarget) - 1] || 0; let percentage = Math.min(100, Math.max(0, (window.appState.balance - prevT) / (currentTarget - prevT) * 100));
+        document.getElementById('globalMilestoneProgress').style.width = `${percentage}%`;
+    }
+
+    window.processWithdrawalRequest = function() {
+        const detail = document.getElementById('withdrawalAccountField').value.trim();
+        if (!detail) {
+            alert("Please supply routing payout specifications.");
+            return;
+        }
+        alert("Transaction routing recorded. Request forwarded to processing hold lines.");
+        document.getElementById('withdrawalAccountField').value = "";
+        closeApplicationScreen('cashoutScreen');
+    };
+
+    /* --- INITIAL RENDER --- */
+    const dashboard = document.getElementById('mainDashboardView');
+    if (dashboard) {
+        dashboard.innerHTML = `
+            <div class="mining-container neon-border">
+                <div class="breathing-paw" id="centerPawEngine" onclick="handleCentralMiningTap()">🐾</div>
+                <div class="mining-status neon-text" id="miningStatusText">READY TO MINE</div>
+            </div>
+            <div class="launcher-grid">
+                <div class="game-card" onclick="openDaily()">
+                    <div class="card-icon">📆</div>
+                    <div class="card-label">Daily Logins</div>
+                </div>
+                <div class="game-card" onclick="triggerRewardedAd()">
+                    <div class="card-icon">📺</div>
+                    <div class="card-label">Watch Rewarded Ad</div></div><div class="game-card" onclick="openSpin()"><div class="card-icon">🎡</div><div class="card-label">Spin the Wheel</div></div><div class="game-card" onclick="openSteps()"><div class="card-icon">🚶</div><div class="card-label">Walking Steps</div></div><div class="game-card" onclick="openScratch()"><div class="card-icon">🎟️</div><div class="card-label">Scratch &amp; Win Paws</div></div><div class="game-card" onclick="openFruit()"><div class="card-icon">🍉</div><div class="card-label">Fruit Tap</div>
+                </div>
+            </div>`;
+    }
+    
+    /* --- v2: SERVER-VALIDATED FEATURES, REAL ADS, WITHDRAWALS --- */
+    const $ = id => document.getElementById(id);
+    const phToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    const rpc = async (fn, args) => { const { data, error } = await supabase.rpc(fn, args); if (error) throw error; return data; };
+    const applyBal = d => { window.appState.balance = parseFloat(d && d.balance !== undefined ? d.balance : d); syncGlobalReactiveUI(); setTimeout(() => refreshAll(), 1500); };
+    const money = n => '₱' + Number(n).toFixed(3);
+    const myProfile = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
+        return data || {};
+    };
+
+    /* ADS (AdMob via Capacitor). Set ADMOB_TESTING=false only for your final release build. */
+    const ADMOB_TESTING = true;
+    const NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+    let AdMob = NATIVE ? plug('AdMob') : null;
+    let adStatus = 'Ads: starting...'; const adLog = [];
+    const em = e => (e && (e.message || e.code)) || JSON.stringify(e);
+    const setAd = m => { adStatus = m; console.log(m); try { const x = $('adStatusLine'); if (x && ADMOB_TESTING) x.innerText = m; const c = $('adChip'); adLog.push(m.replace(/^Ads: /, '')); if (adLog.length > 5) adLog.shift(); if (c) { c.innerText = adLog.join(' › '); c.style.display = ADMOB_TESTING ? 'block' : 'none'; } } catch (e) {} };
+    async function initAds() {
+        setAd('Ads: starting (native=' + NATIVE + ', plugin=' + (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable ? Capacitor.isPluginAvailable('AdMob') : '?') + ')'); if (!NATIVE || !AdMob) { setAd('Ads: plugin not ready, retrying'); if (NATIVE && (window._adTry = (window._adTry || 0) + 1) < 6) { setTimeout(() => { if (!AdMob) AdMob = plug('AdMob'); initAds(); }, 2000); } return; }
+        const opts = { adId: AD_CONFIG.bannerAdUnitId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: ADMOB_TESTING };
+        try {
+            $('admob-sticky-footer').style.display = 'none';
+            AdMob.addListener('bannerAdLoaded', () => setAd('Banner OK'));
+            AdMob.addListener('bannerAdFailedToLoad', e => { setAd('Banner failed: ' + em(e)); setTimeout(() => AdMob.showBanner(opts).catch(() => {}), 30000); });
+            AdMob.addListener('interstitialAdFailedToLoad', e => setAd('Interstitial failed: ' + em(e)));
+            AdMob.addListener('onRewardedVideoAdFailedToLoad', e => setAd('Rewarded failed: ' + em(e)));
+            ['Loaded', 'Showed', 'Reward', 'Dismissed', 'FailedToShow'].forEach(n => AdMob.addListener('onRewardedVideoAd' + n, e => setAd('Rewarded ' + n + (e && n === 'FailedToShow' ? ' ' + em(e) : ''))));
+            ['Showed', 'Dismissed', 'FailedToShow'].forEach(n => AdMob.addListener('interstitialAd' + n, e => setAd('Interstitial ' + n + (e && n === 'FailedToShow' ? ' ' + em(e) : ''))));
+            await AdMob.initialize({ initializeForTesting: ADMOB_TESTING });
+            document.body.style.paddingBottom = '64px';
+            await AdMob.showBanner(opts); setAd('Banner requested...');
+        } catch (e) { setAd('Ads init error: ' + em(e)); if (ADMOB_TESTING && !window._adTry) alert(adStatus); window._adTry = (window._adTry || 0) + 1; if (window._adTry < 4) setTimeout(initAds, 15000); }
+    }
+    let adBusy = false;
+    window.triggerRewardedAd = async function () {
+        if (adBusy) return; adBusy = true;
+        const d = await playRewarded(() => rpc('claim_ad_reward').then(x => { applyBal(x); return x; }).catch(e => ({ error: e.message })));
+        adBusy = false;
+        if (!d) return;
+        if (!d.error) setMission(d.ads_today); alert(d.error ? d.error : 'Ad completed! ' + money(d.reward) + ' added to your balance.' + (d.bonus > 0 ? ' Referral bonus ₱' + d.bonus.toFixed(2) + ' unlocked!' : '') + (d.mission_bonus > 0 ? ' Daily mission complete: +₱0.05!' : ''));
+    };
+
+    /* DAILY LOGIN */
+    const DAY_REWARD = i => ((i + 1) * 0.005);
+    function renderDaily(p) {
+        const today = phToday(), last = p.last_login_claim;
+        let streak = p.login_streak || 0;
+        if (last && (new Date(today) - new Date(last)) / 864e5 > 1) streak = 0;
+        const claimed = last === today;
+        $('dayGrid').innerHTML = Array.from({ length: 7 }, (_, i) =>
+            `<div class="day-box ${i < streak ? 'done' : ''}">Day ${i + 1}<br>${i < streak ? '✔' : money(DAY_REWARD(i))}</div>`).join('');
+        $('dailyBtn').disabled = claimed;
+        $('dailyBtn').innerText = claimed ? 'Come back tomorrow' : "Claim Today's Reward";
+    }
+    window.openDaily = async function () {
+        openApplicationScreen('dailyScreen');
+        try { renderDaily(await myProfile()); } catch (e) { console.log(e); }
+    };
+    window.claimDaily = async function () {
+        try {
+            const d = await rpc('claim_daily_login');
+            applyBal(d); alert('Day ' + d.streak + ' streak! ' + money(d.reward) + ' added.'); maybeInterstitial();
+            renderDaily(await myProfile());
+        } catch (e) { alert(e.message); }
+    };
+
+    /* SPIN THE WHEEL */
+    const SPIN = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05];
+    let wheelRot = 0, spinning = false;
+    try { $('wheel').innerHTML = SPIN.map((v, i) => `<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(${(i + .5) * 60}deg) translateY(-85px);font-size:11px;font-weight:bold">₱${v}</span>`).join(''); } catch (e) { console.log(e); }
+    window.openSpin = () => openApplicationScreen('spinScreen');
+    window.doSpin = async function () {
+        if (spinning) return; spinning = true;
+        try {
+            const d = await rpc('spin_wheel');
+            wheelRot = Math.ceil(wheelRot / 360) * 360 + 1800 + 360 - (d.idx - 0.5) * 60;
+            $('wheel').style.transform = `rotate(${wheelRot}deg)`;
+            setTimeout(() => { applyBal(d); alert('You won ' + money(d.reward) + '!'); maybeInterstitial(); spinning = false; }, 4300);
+        } catch (e) { alert(e.message); spinning = false; }
+    };
+
+    /* WALKING STEPS (accelerometer, counts while app is open) */
+    let stepState = null;
+    try { stepState = JSON.parse(localStorage.getItem('mp_steps')); } catch (e) {}
+    if (!stepState || stepState.d !== phToday()) stepState = { d: phToday(), n: 0 };
+    const saveSteps = () => { try { localStorage.setItem('mp_steps', JSON.stringify(stepState)); } catch (e) {} $('stepCount').innerText = stepState.n; try { $('stepRing').style.strokeDashoffset = 553 * (1 - Math.min(1, stepState.n / 10000)); $('stepStats').innerText = (stepState.n * 0.0007).toFixed(2) + ' km · ' + Math.round(stepState.n * 0.04) + ' kcal'; } catch (e) {} };
+    let lastMag = 0, lastStepAt = 0;
+    window.addEventListener('devicemotion', ev => {
+        const a = ev.accelerationIncludingGravity; if (!a) return;
+        const m = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z), t = Date.now();
+        if (stepState.d !== phToday()) stepState = { d: phToday(), n: 0 };
+        if (m > 12.5 && lastMag <= 12.5 && t - lastStepAt > 300) { stepState.n++; lastStepAt = t; if (stepState.n % 5 === 0) saveSteps(); }
+        lastMag = m;
+    });
+    window.openSteps = () => { saveSteps(); openApplicationScreen('stepsScreen'); };
+    window.claimSteps = async function () {
+        if (stepState.n < 500) { alert('Walk at least 500 steps to claim.'); return; }
+        try {
+            const d = await rpc('claim_steps', { p_steps: stepState.n });
+            stepState.n = 0; saveSteps(); applyBal(d); alert('Steps reward: ' + money(d.reward));
+        } catch (e) { alert(e.message); }
+    };
+
+    /* WITHDRAWAL */
+    window.methodChanged = () => {
+        const m = $('withdrawMethod').value, uno = m === 'UNO Wallet';
+        try { $('unoBox').style.display = uno ? 'block' : 'none'; $('withdrawIdType').parentElement.style.display = uno ? 'block' : 'none'; $('withdrawName').style.display = uno ? 'none' : 'block'; } catch (e) {}
+        if (!uno) $('withdrawIdType').value = 'phone';
+        idTypeChanged();
+        if (!uno) { $('idValueLabel').innerText = m + ' mobile number'; $('withdrawalAccountField').placeholder = '09XXXXXXXXX'; }
+    };
+    window.processWithdrawalRequest = async function () {
+        const m = $('withdrawMethod').value, uno = m === 'UNO Wallet', amt = parseFloat($('withdrawAmount').value);
+        const t = uno ? $('withdrawIdType').value : 'phone', nm = ($('withdrawName').value || '').trim(); let v = $('withdrawalAccountField').value.trim();
+        if (!TIERS.some(t => t.a === amt)) { alert('Choose a cash-out amount.'); return; }
+        if (t === 'qr' && !qrData) { alert('Upload your UNO QR code image.'); return; }
+        if (t !== 'qr') {
+            if (!v) { alert('Enter your ' + (t === 'username' ? 'UNO username' : m + ' mobile number') + '.'); return; }
+            if (t === 'phone' && !uno) {
+                let d = v.replace(/\D/g, ''); if (d.startsWith('63') && d.length === 12) d = '0' + d.slice(2);
+                if (!/^09\d{9}$/.test(d)) { alert('Enter a valid 11-digit mobile number starting with 09.'); return; } v = d;
+            } else if (t === 'phone' && !/^[0-9+ ]{10,15}$/.test(v)) { alert('Enter a valid phone number.'); return; }
+        }
+        if (!uno && nm.length < 2) { alert('Enter the account name registered in ' + m + '.'); return; }
+        try {
+            const d = await rpc('request_withdrawal3', { p_method: m, p_type: t, p_account: t === 'qr' ? '(QR image)' : v, p_name: nm, p_amount: amt, p_qr: t === 'qr' ? qrData : null });
+            applyBal(d); renderPaw(); $('withdrawalAccountField').value = ''; qrData = null; $('qrPreview').style.display = 'none';
+            alert('Withdrawal of ₱' + amt.toFixed(2) + ' (' + Math.round(amt * PC_PER_PESO).toLocaleString() + ' PawCoins) to ' + m + ' submitted. Status: pending review.');
+            closeApplicationScreen('cashoutScreen');
+        } catch (e) { alert(e.message); }
+    };
+/* MINING: 3-hour cycle with countdown, breathing paw, coin rain */
+    const MINE_MS = 3 * 3600 * 1000; let nextMineAt = 0;
+    const hms = ms => { const t = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(t / 3600), Math.floor(t % 3600 / 60), t % 60].map(v => String(v).padStart(2, '0')).join(':'); };
+    function coinRain() { for (let i = 0; i < 28; i++) { const c = document.createElement('span'); c.className = 'coin'; c.textContent = '🪙'; c.style.left = Math.random() * 95 + 'vw'; c.style.animationDelay = Math.random() * 0.6 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 2400); } }
+    setInterval(() => {
+        const l = $('miningStatusText'), pw = $('centerPawEngine'); if (!l || !pw) return;
+        const left = nextMineAt - Date.now();
+        if (left > 0) { l.innerText = 'NEXT MINE IN ' + hms(left); l.style.color = '#9ca3af'; pw.classList.add('paw-wait'); }
+        else { l.innerText = 'TAP TO MINE'; l.style.color = '#00f0ff'; pw.classList.remove('paw-wait'); }
+    }, 1000);
+    window.refreshMining = async () => { try { const pr = await myProfile(); nextMineAt = pr.last_mine ? new Date(pr.last_mine).getTime() + MINE_MS : 0; try { localStorage.setItem('mp_next_mine', nextMineAt); } catch (e) {} scheduleMineAlert(); } catch (e) {} };
+    try { supabase.auth.onAuthStateChange((ev, sess) => { if (sess) refreshMining(); }); } catch (e) {}
+    window.handleCentralMiningTap = async function () {
+        if (nextMineAt > Date.now()) { if (!(await askRefill('mine'))) return; nextMineAt = 0; }
+        try {
+            const bal = await rpc('secure_mining_claim', { payout_amount: 0.02 });
+            window.appState.balance = parseFloat(bal); syncGlobalReactiveUI();
+            nextMineAt = Date.now() + MINE_MS; try { localStorage.setItem('mp_next_mine', nextMineAt); } catch (e) {} scheduleMineAlert(); coinRain(); setTimeout(maybeInterstitial, 1800);
+        } catch (e) { alert(e.message); }
+    };
+
+    /* UNO WALLET WITHDRAWAL INFO */
+    try {
+        $('cashoutScreen').querySelector('.screen-header').insertAdjacentHTML('afterend', '<div id="unoBox" class="neon-border" style="padding:12px;border-radius:12px;margin-bottom:14px;font-size:12px;line-height:1.5">Withdrawals are paid to a <b>UNO Wallet</b>. No wallet yet? Register at <a href="https://uno.global" target="_blank" style="color:#00f0ff">uno.global</a> and use referral code <b class="neon-text">V98HAR</b> <button onclick="try{navigator.clipboard.writeText(\'V98HAR\');alert(\'Referral code copied\')}catch(e){}" style="background:none;border:1px solid #00f0ff;color:#00f0ff;border-radius:6px;padding:2px 8px">Copy</button><br><span style="color:#9ca3af">UNO is a third-party wallet. Registering with this code gives the app owner a referral bonus.</span></div>');
+    } catch (e) { console.log(e); }
+
+    /* SCRATCH & WIN PAWS */
+    let card = null, revealed = true;
+    const cv = $('scratchCv'), cover = () => {
+        const cx = cv.getContext('2d'); cx.globalCompositeOperation = 'source-over'; cx.fillStyle = '#64748b'; cx.fillRect(0, 0, 300, 140);
+        cx.fillStyle = '#e2e8f0'; cx.font = 'bold 18px sans-serif'; cx.textAlign = 'center'; cx.fillText('SCRATCH HERE 🐾', 150, 76);
+    };
+    const scr = e => {
+        if (!card || revealed) return; e.preventDefault();
+        const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e, cx = cv.getContext('2d');
+        cx.globalCompositeOperation = 'destination-out'; cx.beginPath(); cx.arc((t.clientX - r.left) * 300 / r.width, (t.clientY - r.top) * 140 / r.height, 20, 0, 7); cx.fill();
+    };
+    const doneScr = () => {
+        if (!card || revealed) return;
+        const d = cv.getContext('2d').getImageData(0, 0, 300, 140).data; let c = 0;
+        for (let i = 3; i < d.length; i += 16) if (d[i] === 0) c++;
+        if (c / (d.length / 16) > 0.45) { revealed = true; cv.getContext('2d').clearRect(0, 0, 300, 140); applyBal(card); maybeInterstitial(); if (card.win) { coinRain(); alert('You won ' + money(card.reward) + '!'); } }
+    };
+    cv.addEventListener('touchmove', scr, { passive: false }); cv.addEventListener('mousemove', e => { if (e.buttons) scr(e); });
+    cv.addEventListener('touchend', doneScr); cv.addEventListener('mouseup', doneScr);
+    window.openScratch = () => { openApplicationScreen('scratchScreen'); cover(); };
+    window.getCard = async function () {
+        if (card && !revealed) { alert('Finish scratching your current card first.'); return; }
+        try { card = await rpc('scratch_card'); } catch (e) { if (/No more/.test(e.message) && await askRefill('scratch')) return getCard(); alert(e.message); return; }
+        const row = card.win ? ['🐾', '🐾', '🐾'] : ['🐾', '🐱', '🐶'].sort(() => Math.random() - .5);
+        $('scratchPrize').innerHTML = `<div>${row.join(' ')}</div><div class="neon-text" style="font-size:18px">${card.win ? 'YOU WIN ' + money(card.reward) : 'Try again!'}</div>`;
+        revealed = false; cover();
+    };
+
+    /* FRUIT TAP */
+    const FRUITS = ['🍎', '🍉', '🍌', '🍇', '🍓', '🍍', '🍊']; let fScore = 0, fRun = false;
+    window.openFruit = () => openApplicationScreen('fruitScreen');
+    window.startFruit = async function () {
+        if (fRun) return; fRun = true; try { const pl = await rpc('plays_left'); if (pl.fruit <= 0 && !(await askRefill('fruit'))) { fRun = false; return; } } catch (e) {} fScore = 0; let t = 20;
+        const area = $('fruitArea'), btn = $('fruitBtn'); area.innerHTML = ''; btn.disabled = true; $('fruitScore').innerText = 'Score: 0';
+        const spawn = setInterval(() => {
+            const f = document.createElement('span'); f.className = 'fruit'; f.textContent = FRUITS[Math.floor(Math.random() * FRUITS.length)]; f.style.left = Math.random() * 85 + '%';
+            const hit = e => { if (e) e.preventDefault(); if (f.dataset.d) return; f.dataset.d = 1; fScore++; $('fruitScore').innerText = 'Score: ' + fScore; f.remove(); };
+            f.addEventListener('touchstart', hit, { passive: false }); f.addEventListener('mousedown', hit);
+            area.appendChild(f); requestAnimationFrame(() => requestAnimationFrame(() => { f.style.top = '290px'; })); setTimeout(() => f.remove(), 2600);
+        }, 550);
+        const clock = setInterval(async () => {
+            t--; btn.innerText = 'Time: ' + t + 's';
+            if (t <= 0) {
+                clearInterval(clock); clearInterval(spawn); fRun = false; btn.disabled = false; btn.innerText = 'Play Fruit Tap';
+                try { const d = await rpc('claim_fruit', { p_score: fScore }); applyBal(d); alert('Score ' + fScore + '! You earned ' + money(d.reward)); maybeInterstitial(); } catch (e) { alert(e.message); }
+            }
+        }, 1000);
+    };
+/* WATCH-AN-AD REFILLS + PROFILE */
+    const APP_DOWNLOAD_URL = 'https://github.com/ambionvra21-ship-it/MoneyPaws/releases/latest';
+    /* Plays one rewarded video. The reward is claimed the moment Google reports it, not when the ad is closed. */
+    async function playRewarded(onReward) {
+        if (!NATIVE || !AdMob) { alert('Ads only play inside the installed app.'); return null; }
+        let h = null, result = null;
+        try {
+            try { await AdMob.hideBanner(); } catch (e) {}
+            h = await AdMob.addListener('onRewardedVideoAdReward', () => { if (!result) result = onReward(); });
+            await AdMob.prepareRewardVideoAd({ adId: AD_CONFIG.rewardedAdUnitId, isTesting: ADMOB_TESTING });
+            await AdMob.showRewardVideoAd();
+            await new Promise(r => setTimeout(r, 400));
+        } catch (e) { if (!result) alert('Ad problem: ' + ((e && e.message) || 'ad not ready, try again in a minute')); }
+        try { if (h) h.remove(); } catch (e) {}
+        lastRewardedAt = Date.now(); setTimeout(ensureBanner, 700);
+        if (!result) return null;
+        return await result;
+    }
+    async function askRefill(game) {
+        const what = { mine: 'mine again right now', scratch: 'get 1 more scratch card', fruit: 'get 1 more Fruit Tap game' }[game];
+        if (!confirm('Watch a short ad to ' + what + '?')) return false;
+        const r = await playRewarded(() => rpc('refill_play', { p_game: game }).then(() => true).catch(e => ({ error: e.message })));
+        if (r === true) return true;
+        alert(r && r.error ? r.error : 'Watch the full ad to unlock this.'); return false;
+    }
+    const _openScreen = window.openApplicationScreen;
+    window.openApplicationScreen = id => { _openScreen(id); ensureBanner(); if (id === 'profileScreen') loadProfile().then(loadRef); if (id === 'cashoutScreen') { renderPaw(); renderTiers(); myProfile().then(pr => { const n = pr.ads_total || 0; $('pcAds').innerText = n >= 20 ? 'Ads watched: ' + n + ' ✔ cash-out unlocked' : 'Watch ' + (20 - n) + ' more rewarded ads to unlock your first cash-out'; }).catch(() => {}); } };
+    async function loadProfile() {
+        const box = $('profileBody');
+        try {
+            const { data: { user } } = await supabase.auth.getUser(); const pr = await myProfile();
+            const { data: w } = await supabase.from('withdrawals').select('amount,status,created_at').order('created_at', { ascending: false }).limit(5);
+            box.innerHTML = `<p style="font-size:12px;color:#9ca3af">Signed in as</p><p style="margin-bottom:10px">${user.email}</p>
+            <p>Balance: <span class="neon-text">₱${(+pr.php_balance || 0).toFixed(2)}</span></p>
+            <p>Login streak: <span class="neon-text">${pr.login_streak || 0} day(s)</span></p>
+            <p id="adStatusLine" style="font-size:11px;color:#9ca3af;margin-top:8px">${ADMOB_TESTING ? adStatus : ''}</p><p style="font-size:11px;color:#6b7280">MoneyPaws v1.1</p><p style="margin:12px 0 4px;font-size:12px;color:#9ca3af">Recent withdrawals</p>
+            ${(w && w.length) ? w.map(x => `<p style="font-size:12px">${new Date(x.created_at).toLocaleDateString()} · ₱${x.amount} · ${x.status}</p>`).join('') : '<p style="font-size:12px">None yet</p>'}
+            <div id="refBox" style="margin-top:12px;font-size:13px"></div><button class="action-submit-btn" style="margin-top:14px" onclick="shareApp()">Invite friends</button>
+            <button class="action-submit-btn" style="margin-top:8px;background:#1f2937" onclick="logOut()">Log out</button><button class="action-submit-btn" style="margin-top:8px;background:#7f1d1d" onclick="deleteAccount()">Delete my account</button>`;
+        } catch (e) { box.innerText = 'Could not load profile: ' + e.message; }
+    }
+    window.shareApp = async () => {
+        const t = 'Join me on MoneyPaws and earn rewards!' + (APP_DOWNLOAD_URL.startsWith('PASTE') ? '' : ' Download: ' + APP_DOWNLOAD_URL) + (refCode ? ' Use my code ' + refCode + ' for a bonus.' : '');
+        try { if (navigator.share) await navigator.share({ text: t }); else { await navigator.clipboard.writeText(t); alert('Invite text copied'); } } catch (e) {}
+    };
+    window.logOut = async () => { try { await supabase.auth.signOut(); } catch (e) {} try { localStorage.removeItem('mp_bal'); localStorage.removeItem('mp_next_mine'); } catch (e) {} location.reload(); };
+/* MORE ADS (interstitial every 2nd reward) + REFERRALS + ACCOUNT DELETE */
+    const INTERSTITIAL_ID = 'ca-app-pub-6655685917040449/6532163370';
+    let lastInter = 0, refCode = '';
+    async function maybeInterstitial() {
+        if (!NATIVE || !AdMob || Date.now() - lastInter < 120000 || Date.now() - lastRewardedAt < 90000) return; lastInter = Date.now();
+        const id = INTERSTITIAL_ID.startsWith('PASTE') ? (ADMOB_TESTING ? 'ca-app-pub-3940256099942544/1033173712' : null) : INTERSTITIAL_ID;
+        if (!id) return;
+        try { try { await AdMob.hideBanner(); } catch (e) {} await AdMob.prepareInterstitial({ adId: id, isTesting: ADMOB_TESTING }); await AdMob.showInterstitial(); setTimeout(ensureBanner, 700);  } catch (e) { setAd('Interstitial error: ' + em(e)); setTimeout(ensureBanner, 700); }
+    }
+    async function loadRef() {
+        const b = $('refBox'); if (!b) return;
+        try {
+            const r = await rpc('my_referral'); refCode = r.code;
+            b.innerHTML = `Your referral code: <b class="neon-text">${r.code}</b> (${r.count} friends joined, you both get ₱0.50 after your friend watches 10 ads)` + (r.applied ? '' : `<div style="margin-top:8px"><input id="refInput" class="form-input" placeholder="Friend's code"><button class="action-submit-btn" style="margin-top:6px" onclick="applyRef()">Apply code</button></div>`);
+        } catch (e) {}
+    }
+    window.applyRef = async () => {
+        try { const d = await rpc('apply_referral', { p_code: $('refInput').value }); applyBal(d); alert('Code applied! You both get ₱0.50 once you have watched 10 rewarded ads.'); loadProfile().then(loadRef); } catch (e) { alert(e.message); }
+    };
+    window.deleteAccount = async () => {
+        if (!confirm('Permanently delete your account and balance? This cannot be undone.')) return;
+        try { await rpc('delete_my_account'); try { await supabase.auth.signOut(); } catch (e) {} alert('Your account was deleted.'); location.reload(); } catch (e) { alert(e.message); }
+    };
+/* PAWCOINS + UNO WITHDRAWAL (phone / username / QR) */
+    const PC_PER_PESO = 100, PC_GOAL = 500; let qrData = null;
+    function renderPaw() {
+        try {
+            const pc = Math.floor(window.appState.balance * PC_PER_PESO), a = parseFloat($('withdrawAmount').value) || 0;
+            $('pcBal').innerText = '🐾 ' + pc.toLocaleString(); $('pcBar').style.width = Math.min(100, pc / PC_GOAL * 100) + '%';
+            $('pcNeed').innerText = pc >= PC_GOAL ? 'You can withdraw now!' : (PC_GOAL - pc).toLocaleString() + ' more to unlock';
+            $('pcConv').innerText = '₱' + a.toFixed(2) + ' = ' + Math.round(a * PC_PER_PESO).toLocaleString() + ' PawCoins';
+        } catch (e) {}
+    }
+    try {
+        $('cashoutScreen').querySelector('.screen-header').insertAdjacentHTML('afterend', '<div class="neon-border" style="padding:12px;border-radius:12px;margin-bottom:14px"><div style="font-size:12px;color:#9ca3af">Your PawCoins</div><div class="neon-text" id="pcBal" style="font-size:28px">🐾 0</div><div class="progress-container" style="margin:8px 0"><div class="progress-bar" id="pcBar"></div></div><div style="font-size:11px;display:flex;justify-content:space-between"><span id="pcNeed"></span><span>First goal: 500 🐾 = ₱5</span></div><div id="pcAds" style="font-size:11px;margin-top:6px"></div><div style="font-size:11px;color:#9ca3af;margin-top:6px">100 PawCoins = ₱1 · 500 = ₱5 · 1,000 = ₱10 · 5,000 = ₱50 · 100,000 = ₱1,000</div></div>');
+        $('withdrawAmount').insertAdjacentHTML('afterend', '<div id="pcConv" class="neon-text" style="font-size:12px;margin-top:6px"></div>');
+        $('withdrawAmount').addEventListener('change', renderPaw);
+        $('withdrawalAccountField').insertAdjacentHTML('afterend', '<div id="qrBox" style="display:none"><input type="file" accept="image/*" id="qrFile" onchange="qrPicked()" style="color:#9ca3af"><img id="qrPreview" style="display:none;max-width:160px;margin-top:8px;border-radius:8px"><p style="font-size:11px;color:#9ca3af">In UNO open your receive QR code, take a screenshot, and upload it here.</p></div>');
+    } catch (e) { console.log(e); }
+    window.idTypeChanged = () => {
+        const t = $('withdrawIdType').value, f = $('withdrawalAccountField');
+        $('qrBox').style.display = t === 'qr' ? 'block' : 'none'; f.style.display = t === 'qr' ? 'none' : 'block';
+        $('idValueLabel').innerText = t === 'qr' ? 'UNO QR code' : (t === 'phone' ? 'UNO phone number' : 'UNO username');
+        f.placeholder = t === 'phone' ? 'e.g. 09171234567' : 'e.g. paws_user';
+    };
+    window.qrPicked = () => {
+        const f = $('qrFile').files[0]; if (!f) return; const img = new Image();
+        img.onload = () => {
+            const sc = Math.min(1, 600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+            c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            qrData = c.toDataURL('image/jpeg', 0.85); $('qrPreview').src = qrData; $('qrPreview').style.display = 'block'; URL.revokeObjectURL(img.src);
+        };
+        img.src = URL.createObjectURL(f);
+    };
+    
+/* PRELOADED ADS + LEGAL */
+    let rewardReady = false, interReady = false;
+    const interstitialId = () => INTERSTITIAL_ID.startsWith('PASTE') ? (ADMOB_TESTING ? 'ca-app-pub-3940256099942544/1033173712' : null) : INTERSTITIAL_ID;
+    async function ensureRewarded() { if (!rewardReady) await AdMob.prepareRewardVideoAd({ adId: AD_CONFIG.rewardedAdUnitId, isTesting: ADMOB_TESTING }); }
+    async function preloadRewarded() { try { await AdMob.prepareRewardVideoAd({ adId: AD_CONFIG.rewardedAdUnitId, isTesting: ADMOB_TESTING }); rewardReady = true; } catch (e) { rewardReady = false; setAd('Rewarded preload: ' + em(e)); } }
+    async function preloadInter(id) { if (!id) return; try { await AdMob.prepareInterstitial({ adId: id, isTesting: ADMOB_TESTING }); interReady = true; } catch (e) { interReady = false; setAd('Interstitial preload: ' + em(e)); } }
+    window.openLegal = () => openApplicationScreen('legalScreen');
+/* KEEP LOGIN, BALANCE AND MINING TIMER ALIVE WHEN SWITCHING APPS */
+    const hasToken = () => { try { return Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k)); } catch (e) { return false; } };
+    if (hasToken()) {
+        $('applicationAuthGate').style.display = 'none';
+        try {
+            const b = parseFloat(localStorage.getItem('mp_bal')); if (!isNaN(b)) { window.appState.balance = b; syncGlobalReactiveUI(); }
+            const m = parseInt(localStorage.getItem('mp_next_mine')); if (m) nextMineAt = m;
+        } catch (e) {}
+    }
+    let refreshing = false;
+    async function refreshAll() {
+        if (refreshing || !supabase) return; refreshing = true;
+        try {
+            let sess = null;
+            for (let i = 0; i < 3 && !sess; i++) {
+                const { data } = await supabase.auth.getSession(); sess = data && data.session;
+                if (!sess) await new Promise(r => setTimeout(r, 1500));
+            }
+            if (!sess) { $('applicationAuthGate').style.display = ''; refreshing = false; return; }
+            $('applicationAuthGate').style.display = 'none';
+            try { await supabase.rpc('ensure_profile'); } catch (e) {}
+            const pr = await myProfile();
+            updateMission(pr); if (pr && pr.php_balance !== undefined) { window.appState.balance = parseFloat(pr.php_balance) || 0; syncGlobalReactiveUI(); }
+            await refreshMining();
+        } catch (e) { console.log('refresh', e); }
+        refreshing = false;
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refreshAll(); setTimeout(ensureBanner, 800); } });
+    window.addEventListener('focus', refreshAll);
+    setInterval(() => { if (document.visibilityState === 'visible') refreshAll(); }, 120000);
+    setTimeout(refreshAll, 300);
+    try { document.querySelector('.marquee-wrapper').insertAdjacentHTML('afterend', '<div id="adChip" onclick="retryAds()" style="font-size:10px;color:#9ca3af;text-align:center;padding:2px 0;display:none">Ads: starting</div>'); } catch (e) {}
+    /* MINING-READY NOTIFICATION */
+    let LN = NATIVE ? plug('LocalNotifications') : null;
+    async function scheduleMineAlert() {
+        if (!LN) return;
+        try {
+            let pm = await LN.checkPermissions(); if (pm.display !== 'granted') pm = await LN.requestPermissions();
+            if (pm.display !== 'granted') return;
+            await LN.cancel({ notifications: [{ id: 1 }] });
+            if (nextMineAt > Date.now()) await LN.schedule({ notifications: [{ id: 1, title: '🐾 MoneyPaws', body: 'Your paws are ready to mine! Tap to claim.', schedule: { at: new Date(nextMineAt), allowWhileIdle: true } }] });
+        } catch (e) { console.log('notification', e); }
+    }
+    setTimeout(scheduleMineAlert, 4000);
+    try { $('withdrawalAccountField').insertAdjacentHTML('afterend', '<input id="withdrawName" class="form-input" placeholder="Account name (as registered)" style="display:none;margin-top:8px">'); } catch (e) {}
+    /* v1.1: CASH-OUT TIERS, DAILY MISSION, HELP, ANNOUNCEMENTS */
+    const APP_VERSION = 1, FB_PAGE = 'https://www.facebook.com/MoneyPawsAPP/';
+    const TIERS = [[5, 20, 0], [10, 80, 0], [20, 200, 0], [50, 600, 7], [100, 1200, 14], [200, 2400, 14], [300, 3600, 30], [400, 4800, 30], [500, 6000, 30], [1000, 12000, 60]].map(([a, ads, days]) => ({ a, ads, days }));
+    async function renderTiers() {
+        try {
+            const pr = await myProfile(), ads = pr.ads_total || 0, bal = +pr.php_balance || 0;
+            const age = pr.created_at ? (Date.now() - new Date(pr.created_at).getTime()) / 864e5 : 999;
+            const paused = window.appConfig && window.appConfig.cashout_paused === 'true';
+            const rows = TIERS.map(t => {
+                const need = [];
+                if (ads < t.ads) need.push((t.ads - ads).toLocaleString() + ' more ads');
+                if (age < t.days) need.push(Math.ceil(t.days - age) + ' more days');
+                if (bal < t.a) need.push(Math.ceil((t.a - bal) * 100).toLocaleString() + ' more 🐾');
+                return { t, need };
+            });
+            const sel = $('withdrawAmount'), keep = sel.value;
+            sel.innerHTML = rows.map(r => `<option value="${r.t.a}">₱${r.t.a.toLocaleString()} (${(r.t.a * 100).toLocaleString()} PawCoins)${r.need.length ? ' 🔒' : ' ✔'}</option>`).join('');
+            sel.value = TIERS.some(t => String(t.a) === keep) ? keep : '5';
+            $('tierList').innerHTML = (paused ? '<div style="color:#f59e0b;font-size:12px;margin-bottom:6px">⏸ Cash-outs are paused for now. Check our Facebook page for news.</div>' : '') +
+                rows.map(r => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;border-bottom:1px solid #1f2937"><span>₱${r.t.a.toLocaleString()}</span><span style="text-align:right;color:${r.need.length ? '#9ca3af' : '#00f0ff'}">${r.need.length ? '🔒 ' + r.need.join(' · ') : '✔ unlocked'}</span></div>`).join('');
+            renderPaw();
+        } catch (e) { console.log('tiers', e); }
+    }
+    try { $('pcConv').insertAdjacentHTML('afterend', '<div id="tierList" style="margin-top:10px"></div>'); } catch (e) {}
+    try {
+        const mw = document.querySelector('.marquee-wrapper');
+        mw.insertAdjacentHTML('afterend', '<div id="announceBar" style="display:none;margin:6px 12px;padding:8px 10px;border:1px solid #00f0ff;border-radius:10px;font-size:12px;justify-content:space-between;gap:8px;align-items:flex-start"><span id="announceTxt"></span><span onclick="dismissAnn()" style="cursor:pointer;padding:0 4px">✕</span></div>');
+        mw.insertAdjacentHTML('afterend', '<div id="missionBox" style="margin:6px 12px;padding:8px 10px;border:1px solid #1f2937;border-radius:10px;font-size:12px"><div style="display:flex;justify-content:space-between"><span>🎯 Daily mission: watch 5 ads</span><span id="missionTxt" class="neon-text">0/5 · +₱0.05</span></div><div class="progress-container" style="margin-top:6px"><div class="progress-bar" id="missionFill" style="width:0%"></div></div></div>');
+    } catch (e) {}
+    window.setMission = n => { n = Math.max(0, Math.min(5, +n || 0)); try { $('missionTxt').innerText = n >= 5 ? 'Done ✔' : n + '/5 · +₱0.05'; $('missionFill').style.width = (n / 5 * 100) + '%'; } catch (e) {} };
+    function updateMission(pr) { try { setMission(pr && pr.ads_date === phToday() ? pr.ads_today : 0); } catch (e) {} }
+    window.shareTo = async kind => {
+        const text = 'Join me on MoneyPaws and earn rewards!' + (refCode ? ' Use my code ' + refCode + '.' : '') + ' ';
+        const url = APP_DOWNLOAD_URL.startsWith('PASTE') ? FB_PAGE : APP_DOWNLOAD_URL, enc = encodeURIComponent;
+        if (kind === 'ig') { try { if (navigator.share) await navigator.share({ text: text + url }); else { await navigator.clipboard.writeText(text + url); alert('Copied! Paste it in Instagram.'); } } catch (e) {} return; }
+        window.open(kind === 'fb' ? 'https://www.facebook.com/sharer/sharer.php?u=' + enc(url) : 'https://twitter.com/intent/tweet?text=' + enc(text) + '&url=' + enc(url), '_blank');
+    };
+    async function loadConfig() {
+        try {
+            const { data } = await supabase.from('app_config').select('key,value'); if (!data) return;
+            const c = {}; data.forEach(r => { c[r.key] = r.value; }); window.appConfig = c;
+            if (+c.min_version > APP_VERSION) { $('updateBtn').href = APP_DOWNLOAD_URL; $('updateOverlay').style.display = 'flex'; }
+            const msg = (c.announcement || '').trim(), bar = $('announceBar');
+            if (msg && msg !== localStorage.getItem('mp_ann')) { $('announceTxt').innerText = msg; bar.style.display = 'flex'; } else bar.style.display = 'none';
+        } catch (e) {}
+    }
+    window.dismissAnn = () => { try { localStorage.setItem('mp_ann', ((window.appConfig && window.appConfig.announcement) || '').trim()); } catch (e) {} $('announceBar').style.display = 'none'; };
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadConfig(); });
+    setTimeout(loadConfig, 1500); setInterval(loadConfig, 600000);
+
+    /* SHOW PASSWORD + RESET PASSWORD (code sent by email) */
+    window.togglePw = (inputId, btnId) => { const i = $(inputId), b = $(btnId), show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerText = show ? 'Hide' : 'Show'; };
+    let resetSent = false;
+    window.openReset = () => {
+        $('resetOverlay').style.display = 'block'; $('resetEmail').value = $('authEmailInput').value.trim(); resetSent = false;
+        $('resetStep2').style.display = 'none'; $('resetBtn').innerText = 'Send code'; $('resetHint').innerText = 'Enter your account email and we will send you a code.';
+    };
+    window.closeReset = () => { $('resetOverlay').style.display = 'none'; };
+    window.resetStep = async function () {
+        const btn = $('resetBtn'), email = $('resetEmail').value.trim();
+        if (!supabase) { alert('Please wait a moment and try again.'); return; }
+        if (!email) { alert('Enter your email.'); return; }
+        btn.disabled = true;
+        try {
+            if (!resetSent) {
+                const { error } = await supabase.auth.resetPasswordForEmail(email);
+                if (error) throw error;
+                resetSent = true; $('resetStep2').style.display = 'block'; btn.innerText = 'Update password';
+                $('resetHint').innerText = 'We sent a code to ' + email + '. Check your inbox and spam folder, then enter it below.';
+            } else {
+                const code = $('resetCode').value.trim(), pw = $('resetNewPw').value;
+                if (!code) { alert('Enter the code from your email.'); btn.disabled = false; return; }
+                if (pw.length < 6) { alert('Your new password must be at least 6 characters.'); btn.disabled = false; return; }
+                const v = await supabase.auth.verifyOtp({ email, token: code, type: 'recovery' });
+                if (v.error) throw v.error;
+                const u = await supabase.auth.updateUser({ password: pw });
+                if (u.error) throw u.error;
+                alert('Password updated! You are now logged in.');
+                closeReset();
+                if (v.data && v.data.user) bypassAuthGate(v.data.user);
+            }
+        } catch (e) { alert((e && e.message) || 'Something went wrong. Please try again.'); }
+        btn.disabled = false;
+    };
+    function plug(n) {
+        try { const C = window.Capacitor; if (!C) return null; if (C.Plugins && C.Plugins[n]) return C.Plugins[n]; return typeof C.registerPlugin === 'function' ? C.registerPlugin(n) : null; } catch (e) { return null; }
+    }
+    let lastRewardedAt = 0;
+    const bannerOpts = () => ({ adId: AD_CONFIG.bannerAdUnitId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin: 0, isTesting: ADMOB_TESTING });
+    async function ensureBanner() {
+        try {
+            if (!NATIVE) return; if (!AdMob) AdMob = plug('AdMob'); if (!AdMob) return;
+            try { await AdMob.resumeBanner(); } catch (e) { await AdMob.showBanner(bannerOpts()); }
+        } catch (e) { console.log('ensureBanner', e); }
+    }
+    setInterval(() => { if (document.visibilityState === 'visible') ensureBanner(); }, 60000);
+    window.retryAds = () => initAds();
+    initAds();
+
+    </script>
+</body>
+</html>
