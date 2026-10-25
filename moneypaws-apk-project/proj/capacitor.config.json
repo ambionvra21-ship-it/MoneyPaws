@@ -1,5 +1,8 @@
 {
   "appId": "com.moneypaws.rewards",
   "appName": "MoneyPaws",
-  "webDir": "www"
+  "webDir": "www",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
+  }
 }
