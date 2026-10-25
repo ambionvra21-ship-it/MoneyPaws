@@ -17,11 +17,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Make sure www/index.html exists
         run: |
@@ -41,11 +41,17 @@ jobs:
           [ -d android ] || npx cap add android
           npx cap sync android
 
-      - name: Add AdMob App ID to manifest
+      - name: Add AdMob App ID and permissions
         run: |
           F=android/app/src/main/AndroidManifest.xml
-          grep -q 'ads.APPLICATION_ID' $F || sed -i "s#</application>#<meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\"/></application>#" $F
+          V=android/app/src/main/res/values/strings.xml
+          # AdMob app ID as a string resource (read by the Capacitor 8 AdMob plugin)
+          grep -q admob_app_id $V || sed -i "s#</resources>#    <string name=\"admob_app_id\">$ADMOB_APP_ID</string>\n</resources>#" $V
+          # also declare it in the manifest; tools:replace avoids a duplicate-entry error if the plugin declares it too
+          grep -q 'xmlns:tools' $F || sed -i 's#<manifest #<manifest xmlns:tools="http://schemas.android.com/tools" #' $F
+          grep -q 'ads.APPLICATION_ID' $F || sed -i "s#</application>#<meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\" tools:replace=\"android:value\"/></application>#" $F
           grep -q POST_NOTIFICATIONS $F || sed -i 's#<application#<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application#' $F
+          echo "--- manifest check ---"; grep -n "APPLICATION_ID\|POST_NOTIFICATIONS\|xmlns:tools" $F | cut -c1-150; grep -n admob_app_id $V
 
       - name: Build Debug APK
         working-directory: moneypaws-apk-project/proj/android
